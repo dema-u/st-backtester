@@ -1,9 +1,3 @@
-from enum import Enum
-
-
-class Frequency(Enum):
-    H1 = 1
-    m5 = 2
 
 
 class Pips:
@@ -41,4 +35,4 @@ class Lots:
 
     @property
     def units(self):
-        return self.lots * LOT
+        return self.lots * Lots.LOT

@@ -29,7 +29,7 @@ class DataManager:
         else:
             data_path = os.path.join(base_data_path, DataManager.CLEAN_FOLDER)
 
-        freq_path = os.path.join(data_path, freq)
+        freq_path = os.path.join(data_path, DataManager.PRICES_FOLDER, freq)
 
         if not os.path.exists(freq_path):
             os.mkdir(freq_path)
@@ -47,9 +47,15 @@ class DataManager:
         else:
             data_path = os.path.join(base_data_path, DataManager.CLEAN_FOLDER)
 
-        file_path = os.path.join(data_path, freq, ticker_file)
+        file_path = os.path.join(data_path, DataManager.PRICES_FOLDER, freq, ticker_file)
+
+        print(file_path)
 
         if os.path.isfile(file_path):
             return pd.read_csv(file_path)
         else:
             raise AttributeError("No file found.")
+
+    @staticmethod
+    def clean_directories():
+        raise NotImplementedError
