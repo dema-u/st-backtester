@@ -1,5 +1,4 @@
 import uuid
-from structs import Lots
 from enum import Enum
 
 

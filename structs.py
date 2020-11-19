@@ -1,5 +1,9 @@
-LOT = 100000
-MIN_LOT = 0.01
+from enum import Enum
+
+
+class Frequency(Enum):
+    H1 = 1
+    m5 = 2
 
 
 class Pips:
