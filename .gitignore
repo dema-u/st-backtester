@@ -1,8 +1,7 @@
-#My Specifics
+# My Specifics
 data
-logs
 
-# Template 
+# Template
 __pycache__/
 *.py[cod]
 *$py.class
