@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+from typing import List
 
 
 class DataManager:
@@ -57,5 +58,5 @@ class DataManager:
             raise AttributeError("No file found.")
 
     @staticmethod
-    def clean_directories():
+    def clean_directories(tickers: List[str], freqs: List[str]):
         raise NotImplementedError
