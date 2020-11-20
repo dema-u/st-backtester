@@ -1,3 +1,33 @@
+class CurrencyPair:
+
+    JPY_PRECISION = 3
+    PRECISION = 5
+
+    def __init__(self, pair: str):
+
+        if len(pair) == 7 and pair[4] == '/':
+            pair = pair.replace('/', '')
+
+        assert len(pair) == 6, "Currency name is incorrect format!"
+
+        self._pair = pair
+        self.num_currency = pair[:3]
+        self.den_currency = pair[3:]
+
+    @property
+    def price_precision(self):
+        if self.num_currency == 'JPY' or self.den_currency == 'JPY':
+            return self.JPY_PRECISION
+        else:
+            return self.PRECISION
+
+    @property
+    def name(self):
+        return self._pair
+
+    @property
+    def fxcm_name(self):
+        return self.num_currency + '/' + self.den_currency
 
 
 class Pips:

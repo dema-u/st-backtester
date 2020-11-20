@@ -2,6 +2,7 @@ import os
 import utils
 import configparser
 import pandas as pd
+from structs import CurrencyPair
 from tqdm import tqdm
 
 COLUMNS = ['Open', 'High', 'Low', 'Close']
@@ -37,7 +38,7 @@ def ask_price_process(data: pd.DataFrame) -> pd.DataFrame:
     return data[COLUMNS]
 
 
-def process_data(data: pd.DataFrame, mode: str) -> pd.DataFrame:
+def process_data(data: pd.DataFrame, ticker: CurrencyPair, mode: str) -> pd.DataFrame:
 
     if mode == 'ask':
         processed_data = ask_price_process(data)
@@ -46,7 +47,7 @@ def process_data(data: pd.DataFrame, mode: str) -> pd.DataFrame:
     else:
         processed_data = mid_price_process(data)
 
-    return processed_data
+    return processed_data.round(ticker.price_precision)
 
 
 if __name__ == '__main__':
@@ -57,12 +58,12 @@ if __name__ == '__main__':
 
     data_section = config['DATA']
 
-    all_tickers = data_section['tickers'].split(',')
+    all_tickers = [CurrencyPair(ticker) for ticker in data_section['tickers'].split(',')]
     all_freqs = data_section['frequency'].split(',')
     mode = data_section['processing']
 
     for ticker in tqdm(all_tickers):
         for freq in all_freqs:
-            raw_data = utils.DataManager.read_price_data(ticker, freq, raw=True)
-            processed_data = process_data(raw_data, mode)
-            utils.DataManager.store_price_data(processed_data, ticker, freq, raw=False)
+            raw_data = utils.DataManager.read_price_data(ticker.name, freq, raw=True)
+            processed_data = process_data(raw_data, ticker, mode)
+            utils.DataManager.store_price_data(processed_data, ticker.name, freq, raw=False)

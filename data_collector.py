@@ -3,6 +3,7 @@ import configparser
 import pandas as pd
 import fxcmpy
 import utils
+from structs import CurrencyPair
 from tqdm import tqdm
 from datetime import datetime
 
@@ -42,15 +43,17 @@ if __name__ == '__main__':
 
     data_section = config['DATA']
 
-    all_tickers = [format_ticker_str(ticker) for ticker in data_section['tickers'].split(',')]
+    all_tickers = [CurrencyPair(ticker) for ticker in data_section['tickers'].split(',')]
     all_freqs = data_section['frequency'].split(',')
     first_date = datetime.strptime(data_section['first_date'], '%d/%m/%Y')
     last_date = datetime.strptime(data_section['last_date'], '%d/%m/%Y')
 
     for ticker in tqdm(all_tickers):
         for freq in all_freqs:
-            save_data = get_ticker_data(api_con, ticker=ticker, freq=freq, first_date=first_date, last_date=last_date)
-            ticker_name = ticker.replace('/', '')
-            utils.DataManager.store_price_data(save_data, ticker_name, freq, raw=True)
+            save_data = get_ticker_data(api_con,
+                                        ticker=ticker.fxcm_name,
+                                        freq=freq,
+                                        first_date=first_date,
+                                        last_date=last_date)
 
-    print('PROGRAM FINISHED')
+            utils.DataManager.store_price_data(save_data, ticker.name, freq, raw=True)
