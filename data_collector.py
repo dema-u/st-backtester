@@ -2,9 +2,9 @@ import os
 import configparser
 import pandas as pd
 import fxcmpy
+import utils
 from tqdm import tqdm
 from datetime import datetime
-from utils import DataManager
 
 
 FREQ_MAP = {'m5': '5min', 'm15': '15min', 'm30': '30min', 'H1': '1H', 'H4': '4H', 'D1': '1D', 'W1': '1W'}
@@ -49,8 +49,8 @@ if __name__ == '__main__':
 
     for ticker in tqdm(all_tickers):
         for freq in all_freqs:
-            data = get_ticker_data(api_con, ticker=ticker, freq=freq, first_date=first_date, last_date=last_date)
+            save_data = get_ticker_data(api_con, ticker=ticker, freq=freq, first_date=first_date, last_date=last_date)
             ticker_name = ticker.replace('/', '')
-            DataManager.store_price_data(data, ticker_name, freq, raw=True)
+            utils.DataManager.store_price_data(save_data, ticker_name, freq, raw=True)
 
     print('PROGRAM FINISHED')

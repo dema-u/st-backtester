@@ -54,7 +54,7 @@ class DataManager:
         print(file_path)
 
         if os.path.isfile(file_path):
-            return pd.read_csv(file_path)
+            return pd.read_csv(file_path, index_col=0, parse_dates=True)
         else:
             raise AttributeError("No file found.")
 
