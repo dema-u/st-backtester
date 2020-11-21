@@ -118,11 +118,21 @@ class Order:
         else:
             self.tag = tag
 
-    def create_position(self, entry_price: float) -> Position:
-        self._fulfilled = True
-        return Position(broker=self.broker,
-                        is_long=self._is_long,
-                        size=self._size,
-                        entry_price=entry_price,
-                        tp_price=self._tp_price,
-                        sl_price=self._sl_price)
+    def cancel(self):
+        pass
+
+    @property
+    def tp(self):
+        pass
+
+    @tp.setter
+    def tp(self):
+        pass
+
+    @property
+    def sl(self):
+        pass
+
+    @sl.setter
+    def sl(self):
+        pass

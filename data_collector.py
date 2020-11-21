@@ -11,10 +11,6 @@ from datetime import datetime
 FREQ_MAP = {'m5': '5min', 'm15': '15min', 'm30': '30min', 'H1': '1H', 'H4': '4H', 'D1': '1D', 'W1': '1W'}
 
 
-def format_ticker_str(ticker: str) -> str:
-    return ticker[:3] + '/' + ticker[3:]
-
-
 def get_ticker_data(con, ticker: str, freq: str, first_date: datetime, last_date: datetime) -> pd.DataFrame:
     dates = list(pd.date_range(start=first_date, end=last_date, freq=FREQ_MAP[freq])[::10000]) + [last_date]
 
