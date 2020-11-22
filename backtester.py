@@ -1,33 +1,13 @@
 import pandas as pd
 from structs import Lots
+from typing import List
 import uuid
-
-
-class Broker:
-
-    def __init__(self,
-                 data: pd.DataFrame,
-                 cash: float,
-                 spread: float,
-                 leverage: int = 50):
-
-        self.data = data
-
-        self._cash = cash
-        self._spread = spread
-        self._leverage = leverage
-
-        self.orders = []
-        self.positions = []
-
-    def get_historical_price(self, history_len: int):
-        pass
 
 
 class Position:
 
     def __init__(self,
-                 broker: Broker,
+                 broker,
                  is_long: bool,
                  size: Lots,
                  entry_price: float,
@@ -36,15 +16,12 @@ class Position:
 
         if is_long:
             assert sl_price < entry_price < tp_price
-            assert tp_price > sl_price
         else:
             assert tp_price < entry_price < sl_price
-            assert tp_price < sl_price
 
         self.broker = broker
 
         self._is_long = bool(is_long)
-
         self._entry_price = entry_price
         self._tp_price = tp_price
         self._sl_price = sl_price
@@ -58,32 +35,30 @@ class Position:
 
         self._closed = False
 
-    def close(self, exit_price: float):
+    def close(self, exit_price: float) -> float:
         self._exit_price = exit_price
         self._closed = True
         self.broker.orders.remove(self)
-
-    def update(self, last_price):
-        pass
+        return self._pnl
 
     @property
     def is_long(self):
         return self._is_long
 
     @property
-    def stop_loss(self):
+    def sl(self):
         return self._sl_price
 
-    @stop_loss.setter
-    def stop_loss(self, new_sl: float):
+    @sl.setter
+    def sl(self, new_sl: float):
         self._sl_price = new_sl
 
     @property
-    def take_profit(self):
+    def tp(self):
         return self._tp_price
 
-    @take_profit.setter
-    def take_profit(self, new_tp: float):
+    @tp.setter
+    def tp(self, new_tp: float):
         self._tp_price = new_tp
 
     @property
@@ -94,7 +69,7 @@ class Position:
 class Order:
 
     def __init__(self,
-                 broker: Broker,
+                 broker,
                  is_long: bool,
                  size: Lots,
                  limit_price: float,
@@ -102,6 +77,11 @@ class Order:
                  tp_price: float,
                  sl_price: float,
                  tag=None):
+
+        if is_long:
+            assert sl_price < tp_price
+        else:
+            assert tp_price < sl_price
 
         self.broker = broker
         self._is_long = is_long
@@ -111,28 +91,89 @@ class Order:
         self._sl_price = sl_price
 
         self._size = size
-        self._fulfilled = False
+        self._executed = False
 
         if tag is None:
             self.tag = str(uuid.uuid1())
         else:
             self.tag = tag
 
+        self.broker.orders.insert(0, self)
+
+    def execute_order(self, entry_price: float):
+        self.broker.orders.remove(self)
+
+        position = Position(self.broker,
+                            is_long=self.is_long,
+                            size=self._size,
+                            entry_price=entry_price,
+                            tp_price=self._tp_price,
+                            sl_price=self._sl_price)
+
+        self.broker.positions.insert(0, position)
+
     def cancel(self):
-        pass
+        self.broker.orders.remove(self)
+
+    @property
+    def is_long(self):
+        return self._is_long
 
     @property
     def tp(self):
-        pass
+        return self._tp_price
 
     @tp.setter
-    def tp(self):
-        pass
+    def tp(self, new_take_profit):
+        self._tp_price = new_take_profit
 
     @property
     def sl(self):
-        pass
+        return self._sl_price
 
     @sl.setter
-    def sl(self):
+    def sl(self, new_stop_loss):
+        self._sl_price = new_stop_loss
+
+
+class Broker:
+
+    def __init__(self,
+                 data: pd.DataFrame,
+                 cash: float = 1000.0,
+                 spread: float = 1.0,
+                 leverage: int = 200):
+
+        self.data = data
+
+        self._cash = cash
+        self._spread = spread
+        self._leverage = leverage
+
+        self.orders = []
+        self.positions = []
+
+    def open_order(self,
+                   is_long: bool,
+                   limit: float,
+                   stop: float,
+                   tp: float,
+                   sl: float,
+                   size: Lots):
+
+        Order(self, is_long=is_long, size=size, limit_price=limit, stop_price=stop, tp_price=tp, sl_price=sl)
+
+    @property
+    def open_orders(self) -> List[Order]:
+        return self.orders
+
+    @property
+    def open_positions(self) -> List[Position]:
+        return self.positions
+
+    @property
+    def equity(self) -> float:
+        return 1
+
+    def historical_price(self, history_len: int):
         pass
