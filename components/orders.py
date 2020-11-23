@@ -1,6 +1,7 @@
 import uuid
 import abc
 from structs import Lots
+from components.positions import Position
 
 
 class Order(metaclass=abc.ABCMeta):
@@ -24,6 +25,7 @@ class Order(metaclass=abc.ABCMeta):
         self._tp = tp
         self._sl = sl
         self._size = size
+        self._executed = False
 
         if tag is None:
             self.tag = str(uuid.uuid1())
@@ -33,18 +35,22 @@ class Order(metaclass=abc.ABCMeta):
     def execute_order(self, entry_price: float):
         self.broker.orders.remove(self)
 
-        position = Position(self.broker,
-                            is_long=self.is_long,
-                            size=self._size,
-                            entry_price=entry_price,
-                            tp=self._tp,
-                            sl=self._sl)
+        Position(self.broker,
+                 is_long=self.is_long,
+                 size=self._size,
+                 entry_price=entry_price,
+                 tp=self._tp,
+                 sl=self._sl)
 
-        self.broker.positions.insert(0, position)
+        self._executed = True
 
     @property
     def is_long(self):
         return self._is_long
+
+    @property
+    def is_executed(self):
+        return self._executed
 
     @property
     def tp(self):
@@ -76,7 +82,7 @@ class MarketOrder(Order):
         self.broker.orders.insert(0, self)
 
 
-class GeneralOrder(Order):
+class EntryOrder(Order):
 
     def __init__(self,
                  broker,
@@ -88,7 +94,7 @@ class GeneralOrder(Order):
                  sl: float,
                  tag=None):
 
-        super(GeneralOrder, self).__init__(broker=broker, is_long=is_long, size=size, tp=tp, sl=sl, tag=tag)
+        super(EntryOrder, self).__init__(broker=broker, is_long=is_long, size=size, tp=tp, sl=sl, tag=tag)
 
         if is_long:
             assert sl < tp

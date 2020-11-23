@@ -3,7 +3,12 @@ import utils
 import configparser
 import pandas as pd
 from structs import CurrencyPair
-from tqdm import tqdm
+
+try:
+    from tqdm import tqdm
+except ImportError:
+    tqdm = None
+
 
 COLUMNS = ['Open', 'High', 'Low', 'Close']
 

@@ -25,22 +25,39 @@ class Position:
 
         self._size = size
 
-        self._last_price = None
+        self._latest_price = None
         self._exit_price = None
         self._pct_change = None
         self._pnl = None
 
         self._closed = False
 
+        self.broker.positions.insert(0, self)
+
     def close(self, exit_price: float) -> float:
         self._exit_price = exit_price
+        self.update(exit_price)
+
         self._closed = True
         self.broker.orders.remove(self)
+
         return self._pnl
+
+    def update(self, latest_price: float):
+        self._latest_price = latest_price
+
+        if self.is_long:
+            assert (self.tp >= latest_price >= self.sl)
+        else:
+            assert (self.tp <= latest_price <= self.sl)
 
     @property
     def is_long(self):
         return self._is_long
+
+    @property
+    def is_closed(self):
+        return self._closed
 
     @property
     def sl(self):
@@ -48,6 +65,12 @@ class Position:
 
     @sl.setter
     def sl(self, new_sl: float):
+
+        if self.is_long:
+            assert new_sl < self._entry_price < self.tp
+        else:
+            assert self.tp < self._entry_price < new_sl
+
         self._sl = new_sl
 
     @property
@@ -56,8 +79,10 @@ class Position:
 
     @tp.setter
     def tp(self, new_tp: float):
-        self._tp = new_tp
 
-    @property
-    def is_closed(self):
-        return self._closed
+        if self.is_long:
+            assert self.sl < self._entry_price < new_tp
+        else:
+            assert new_tp < self._entry_price < self.sl
+
+        self._tp = new_tp

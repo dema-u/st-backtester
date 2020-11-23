@@ -4,8 +4,12 @@ import pandas as pd
 import fxcmpy
 import utils
 from structs import CurrencyPair
-from tqdm import tqdm
 from datetime import datetime
+
+try:
+    from tqdm import tqdm
+except ImportError:
+    tqdm = None
 
 
 FREQ_MAP = {'m5': '5min', 'm15': '15min', 'm30': '30min', 'H1': '1H', 'H4': '4H', 'D1': '1D', 'W1': '1W'}
@@ -53,3 +57,5 @@ if __name__ == '__main__':
                                         last_date=last_date)
 
             utils.DataManager.store_price_data(save_data, ticker.name, freq, raw=True)
+
+    api_con.close()
