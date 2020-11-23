@@ -1,4 +1,4 @@
-from structs import Lots
+from structs import MilliLots
 
 
 class Position:
@@ -6,7 +6,7 @@ class Position:
     def __init__(self,
                  broker,
                  is_long: bool,
-                 size: Lots,
+                 size: int,
                  entry_price: float,
                  tp: float,
                  sl: float):
@@ -34,11 +34,11 @@ class Position:
 
         self.broker.positions.insert(0, self)
 
-    def close(self, exit_price: float) -> float:
-        self._exit_price = exit_price
-        self.update(exit_price)
+    def close(self) -> float:
 
         self._closed = True
+        self._exit_price = self._latest_price
+
         self.broker.orders.remove(self)
 
         return self._pnl
@@ -50,6 +50,9 @@ class Position:
             assert (self.tp >= latest_price >= self.sl)
         else:
             assert (self.tp <= latest_price <= self.sl)
+
+        pct_change = abs(self._entry_price - latest_price)/self._entry_price
+        self._pnl = (self._size * 1000) * pct_change
 
     @property
     def is_long(self):

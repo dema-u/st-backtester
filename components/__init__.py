@@ -1,1 +1,1 @@
-from structs import Lots
+from structs import MilliLots

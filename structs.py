@@ -55,14 +55,14 @@ class Pips:
         return f"Pips({self.pips})"
 
 
-class Lots:
+class MilliLots:
 
-    LOT = 100000
-    MIN_LOT = 0.01
+    LOT = 1000
+    MIN_LOT = 1
 
     def __init__(self, lots: float):
         self.lots = lots
 
     @property
     def units(self):
-        return self.lots * Lots.LOT
+        return self.lots * MilliLots.LOT

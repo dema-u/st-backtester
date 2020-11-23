@@ -1,6 +1,6 @@
 import uuid
 import abc
-from structs import Lots
+from structs import MilliLots
 from components.positions import Position
 
 
@@ -9,7 +9,7 @@ class Order(metaclass=abc.ABCMeta):
     def __init__(self,
                  broker,
                  is_long: bool,
-                 size: Lots,
+                 size: int,
                  tp: float,
                  sl: float,
                  tag=None):
@@ -74,7 +74,7 @@ class MarketOrder(Order):
     def __init__(self,
                  broker,
                  is_long: bool,
-                 size: Lots,
+                 size: int,
                  tp: float,
                  sl: float,
                  tag=None):
@@ -87,7 +87,7 @@ class EntryOrder(Order):
     def __init__(self,
                  broker,
                  is_long: bool,
-                 size: Lots,
+                 size: int,
                  limit: float,
                  stop: float,
                  tp: float,

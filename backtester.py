@@ -1,5 +1,5 @@
 import pandas as pd
-from structs import Lots
+from structs import MilliLots
 from typing import List
 from components.orders import EntryOrder, MarketOrder
 from components.positions import Position
@@ -34,14 +34,14 @@ class Broker:
                          stop: float,
                          tp: float,
                          sl: float,
-                         size: Lots):
+                         size: int):
         EntryOrder(self, is_long=is_long, size=size, limit=limit, stop=stop, tp=tp, sl=sl)
 
     def open_market_order(self,
                           is_long: bool,
                           tp: float,
                           sl: float,
-                          size: Lots):
+                          size: int):
         MarketOrder(self, is_long=is_long, size=size, tp=tp, sl=sl)
 
     @property
@@ -54,7 +54,7 @@ class Broker:
 
     @property
     def equity(self) -> float:
-        return self._equity
+        return sum((position.pnl for position in self.positions)) + self.cash
 
     @property
     def cash(self) -> float:
