@@ -60,5 +60,9 @@ class Broker:
     def cash(self) -> float:
         return self._cash
 
+    @property
+    def leveraged_cash(self) -> float:
+        return self._cash * self._leverage
+
     def get_price(self, history_len: int):
         pass

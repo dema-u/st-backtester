@@ -1,4 +1,5 @@
 import os
+import logging
 import utils
 import configparser
 import pandas as pd
@@ -58,17 +59,29 @@ def process_data(data: pd.DataFrame, ticker: CurrencyPair, mode: str) -> pd.Data
 if __name__ == '__main__':
 
     abspath_data = os.path.abspath('configs/data.ini')
+    abspath_log = os.path.abspath('logs/data.log')
     config = configparser.ConfigParser()
     config.read(abspath_data)
+
+    logger = logging.getLogger("DataProcessing")
+
+    file_handler = logging.FileHandler(filename=abspath_log)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    logger.addHandler(file_handler)
+    logger.setLevel(logging.INFO)
 
     data_section = config['DATA']
 
     all_tickers = [CurrencyPair(ticker) for ticker in data_section['tickers'].split(',')]
     all_freqs = data_section['frequency'].split(',')
     mode = data_section['processing']
+    logger.info(f"Config file read")
 
     for ticker in tqdm(all_tickers):
         for freq in all_freqs:
             raw_data = utils.DataManager.read_price_data(ticker.name, freq, raw=True)
             processed_data = process_data(raw_data, ticker, mode)
             utils.DataManager.store_price_data(processed_data, ticker.name, freq, raw=False)
+            logger.info(f"Ticker {ticker.name} ({freq}) downloaded, processed and stored")
+
+    logger.info(f"Data processing finished")

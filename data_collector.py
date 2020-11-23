@@ -1,4 +1,5 @@
 import os
+import logging
 import configparser
 import pandas as pd
 import fxcmpy
@@ -28,6 +29,14 @@ if __name__ == '__main__':
 
     abspath_data = os.path.abspath('configs/data.ini')
     abspath_api = os.path.abspath('configs/api.ini')
+    abspath_log = os.path.abspath('logs/data.log')
+
+    logger = logging.getLogger("DataCollection")
+
+    file_handler = logging.FileHandler(filename=abspath_log)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    logger.addHandler(file_handler)
+    logger.setLevel(logging.INFO)
 
     config = configparser.ConfigParser()
     config.read(abspath_data)
@@ -40,6 +49,7 @@ if __name__ == '__main__':
     log_level = fxcm_section['log_level']
 
     api_con = fxcmpy.fxcmpy(access_token=access_token, log_file=log_file, log_level=log_level)
+    logger.info(f"FXCM API connection established")
 
     data_section = config['DATA']
 
@@ -47,15 +57,21 @@ if __name__ == '__main__':
     all_freqs = data_section['frequency'].split(',')
     first_date = datetime.strptime(data_section['first_date'], '%d/%m/%Y')
     last_date = datetime.strptime(data_section['last_date'], '%d/%m/%Y')
+    logger.info(f"Config file read")
 
     for ticker in tqdm(all_tickers):
         for freq in all_freqs:
-            save_data = get_ticker_data(api_con,
-                                        ticker=ticker.fxcm_name,
-                                        freq=freq,
-                                        first_date=first_date,
-                                        last_date=last_date)
+            try:
+                save_data = get_ticker_data(api_con,
+                                            ticker=ticker.fxcm_name,
+                                            freq=freq,
+                                            first_date=first_date,
+                                            last_date=last_date)
 
-            utils.DataManager.store_price_data(save_data, ticker.name, freq, raw=True)
+                utils.DataManager.store_price_data(save_data, ticker.name, freq, raw=True)
+                logger.info(f"Ticker {ticker.name} ({freq}) downloaded and stored")
+            except Exception:
+                logger.exception("Exception occurred")
 
     api_con.close()
+    logger.info(f"Data download finished, API connection closed")

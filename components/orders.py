@@ -1,6 +1,6 @@
 import uuid
 import abc
-from structs import MilliLots
+from typing import Optional
 from components.positions import Position
 
 
@@ -88,13 +88,15 @@ class EntryOrder(Order):
                  broker,
                  is_long: bool,
                  size: int,
-                 limit: float,
-                 stop: float,
+                 limit: Optional[float],
+                 stop: Optional[float],
                  tp: float,
                  sl: float,
                  tag=None):
 
         super(EntryOrder, self).__init__(broker=broker, is_long=is_long, size=size, tp=tp, sl=sl, tag=tag)
+
+        assert ((limit is not None) or (stop is not None))
 
         if is_long:
             assert sl < tp
