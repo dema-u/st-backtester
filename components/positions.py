@@ -38,19 +38,21 @@ class Position:
         self._closed = True
         self._exit_price = self._latest_price
 
-        self.broker.orders.remove(self)
+        self.broker.positions.remove(self)
 
         return self._pnl
 
     def update(self, latest_price: float):
+
         self._latest_price = latest_price
+        pct_change = (latest_price - self.entry_price) / self.entry_price
 
         if self.is_long:
             assert (self.tp >= latest_price >= self.sl)
         else:
             assert (self.tp <= latest_price <= self.sl)
+            pct_change *= -1
 
-        pct_change = abs(self._entry_price - latest_price)/self._entry_price
         self._pnl = (self._size * 1000) * pct_change
 
     @property
@@ -60,6 +62,14 @@ class Position:
     @property
     def size(self):
         return self._size
+
+    @property
+    def entry_price(self):
+        return self._entry_price
+
+    @property
+    def pnl(self):
+        return self._pnl
 
     @property
     def is_closed(self):
