@@ -1,8 +1,9 @@
 import pandas as pd
-from structs import MilliLots
 from typing import List
+from datetime import datetime
 from components.orders import EntryOrder, MarketOrder
 from components.positions import Position
+from components.account import Account
 
 
 class Broker:
@@ -10,23 +11,14 @@ class Broker:
     def __init__(self,
                  data: pd.DataFrame,
                  cash: float = 1000.0,
-                 spread: float = 1.0,
                  leverage: int = 50):
 
         self.data = data
 
-        self._cash = cash
-        self._equity = cash
-        self._leverage = leverage
-
-        self._spread = spread
+        self.account = Account(self, cash, leverage)
 
         self.orders = []
         self.positions = []
-
-        self.index = 0
-        self.start_index = self.index
-        self.end_index = len(data)
 
     def open_entry_order(self,
                          is_long: bool,
@@ -34,35 +26,39 @@ class Broker:
                          stop: float,
                          tp: float,
                          sl: float,
-                         size: int):
-        EntryOrder(self, is_long=is_long, size=size, limit=limit, stop=stop, tp=tp, sl=sl)
+                         size: int,
+                         tag: str = None):
+
+        if size > self.available_size:
+            message = f'Not enough cash to submit this trade. Available {self.available_size}, Requested: {size}'
+            raise AttributeError(message)
+
+        EntryOrder(self, is_long=is_long, size=size, limit=limit, stop=stop, tp=tp, sl=sl, tag=tag)
 
     def open_market_order(self,
                           is_long: bool,
                           tp: float,
                           sl: float,
-                          size: int):
-        MarketOrder(self, is_long=is_long, size=size, tp=tp, sl=sl)
+                          size: int,
+                          tag: str = None):
 
-    @property
-    def open_orders(self) -> List[MarketOrder, EntryOrder]:
-        return self.orders
+        if size > self.available_size:
+            message = f'Not enough cash to submit this trade. Available {self.available_size}, Requested: {size}'
+            raise AttributeError(message)
 
-    @property
-    def open_positions(self) -> List[Position]:
-        return self.positions
+        MarketOrder(self, is_long=is_long, size=size, tp=tp, sl=sl, tag=tag)
 
     @property
     def equity(self) -> float:
-        return sum((position.pnl for position in self.positions)) + self.cash
+        return self.account.equity
 
     @property
-    def cash(self) -> float:
-        return self._cash
+    def available_size(self) -> float:
+        return self.account.available_size
 
     @property
-    def leveraged_cash(self) -> float:
-        return self._cash * self._leverage
+    def current_time(self) -> datetime:
+        return datetime(2020, 1, 1)
 
-    def get_price(self, history_len: int):
+    def get_prices(self, history_len: int, bid_ask: str):
         pass

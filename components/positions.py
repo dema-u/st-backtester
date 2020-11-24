@@ -23,7 +23,7 @@ class Position:
         self._tp = tp
         self._sl = sl
 
-        self._size = size
+        self._size = int(size)
 
         self._latest_price = None
         self._exit_price = None
@@ -57,6 +57,10 @@ class Position:
     @property
     def is_long(self):
         return self._is_long
+
+    @property
+    def size(self):
+        return self._size
 
     @property
     def is_closed(self):

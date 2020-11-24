@@ -21,10 +21,10 @@ class Order(metaclass=abc.ABCMeta):
 
         self.broker = broker
 
-        self._is_long = is_long
+        self._is_long = bool(is_long)
         self._tp = tp
         self._sl = sl
-        self._size = size
+        self._size = int(size)
         self._executed = False
 
         if tag is None:
@@ -47,6 +47,10 @@ class Order(metaclass=abc.ABCMeta):
     @property
     def is_long(self):
         return self._is_long
+
+    @property
+    def size(self):
+        return self._size
 
     @property
     def is_executed(self):
@@ -110,3 +114,11 @@ class EntryOrder(Order):
 
     def cancel(self):
         self.broker.orders.remove(self)
+
+    @property
+    def limit(self):
+        return self._limit
+
+    @property
+    def stop(self):
+        return self._stop

@@ -14,6 +14,10 @@ except ImportError:
 COLUMNS = ['Open', 'High', 'Low', 'Close']
 
 
+RENAMER = {'bidopen': 'BidOpen', 'bidhigh': 'BidHigh', 'bidlow': 'BidLow', 'bidclose': 'BidClose',
+           'askopen': 'AskOpen', 'askhigh': 'AskHigh', 'asklow': 'AskLow', 'askclose': 'AskClose'}
+
+
 def mid_price_process(data: pd.DataFrame) -> pd.DataFrame:
 
     data['Open'] = data['askopen'] + data['bidopen']
@@ -44,14 +48,23 @@ def ask_price_process(data: pd.DataFrame) -> pd.DataFrame:
     return data[COLUMNS]
 
 
+def bidask_price_process(data: pd.DataFrame) -> pd.DataFrame:
+
+    data = data.rename(RENAMER, axis=1)
+
+    return data[RENAMER.values()]
+
+
 def process_data(data: pd.DataFrame, ticker: CurrencyPair, mode: str) -> pd.DataFrame:
 
     if mode == 'ask':
         processed_data = ask_price_process(data)
     elif mode == 'bid':
         processed_data = bid_price_process(data)
-    else:
+    elif mode == 'mid':
         processed_data = mid_price_process(data)
+    else:
+        processed_data = bidask_price_process(data)
 
     return processed_data.round(ticker.price_precision)
 

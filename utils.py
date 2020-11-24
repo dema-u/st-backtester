@@ -17,6 +17,8 @@ class DataManager:
         os.mkdir(base_data_path)
         os.mkdir(os.path.join(base_data_path, DataManager._RAW_FOLDER))
         os.mkdir(os.path.join(base_data_path, DataManager._CLEAN_FOLDER))
+        os.mkdir(os.path.join(base_data_path, DataManager._RAW_FOLDER, DataManager._PRICES_FOLDER))
+        os.mkdir(os.path.join(base_data_path, DataManager._CLEAN_FOLDER, DataManager._PRICES_FOLDER))
 
     @staticmethod
     def store_price_data(data: pd.DataFrame, ticker: str, freq: str, raw: bool) -> None:
