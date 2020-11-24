@@ -1,4 +1,3 @@
-from structs import MilliLots
 
 
 class Position:

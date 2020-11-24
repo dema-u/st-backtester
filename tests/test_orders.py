@@ -14,7 +14,7 @@ def test_market_order_insertion(empty_broker):
                                    sl=0.1,
                                    size=1)
 
-    orders = empty_broker.open_orders
+    orders = empty_broker.orders
     order = orders[0]
 
     assert len(empty_broker.orders) == 1
@@ -32,7 +32,7 @@ def test_entry_order_insertion(empty_broker):
                                   sl=0.1,
                                   size=1)
 
-    orders = empty_broker.open_orders
+    orders = empty_broker.orders
     order = orders[0]
 
     assert len(empty_broker.orders) == 1
@@ -52,7 +52,7 @@ def test_entry_order_cancellation(empty_broker):
                                   sl=0.1,
                                   size=1)
 
-    orders = empty_broker.open_orders
+    orders = empty_broker.orders
     order = orders[0]
     order.cancel()
 

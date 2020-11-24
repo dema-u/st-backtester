@@ -9,25 +9,31 @@ class Account:
 
         self.broker = broker
 
+        self.initial_cash = cash
+
         self._cash = cash
         self._leverage = leverage
+
+    def reset(self):
+        self._cash = self.initial_cash
 
     def process_pnl(self, pnl: float) -> None:
         self._cash += pnl
 
     @property
-    def available_margin(self):
+    def used_margin(self) -> float:
         total_amount_positions = sum((position.size for position in self.broker.positions)) * 1000
-        total_amount = self._cash * self._leverage
-
-        return (total_amount - total_amount_positions) / self._leverage
+        return total_amount_positions / self._leverage
 
     @property
-    def available_size(self):
+    def available_margin(self) -> float:
+        return self._cash - self.used_margin
+
+    @property
+    def available_size(self) -> float:
         return (self.available_margin * self._leverage) / self.LOT
 
     @property
-    def equity(self):
+    def equity(self) -> float:
         total_pnl = sum((position.pnl for position in self.broker.positions))
         return total_pnl + self._cash
-
