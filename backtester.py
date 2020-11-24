@@ -9,7 +9,7 @@ class Broker:
     def __init__(self,
                  data: pd.DataFrame,
                  cash: float = 1000.0,
-                 leverage: int = 50):
+                 leverage: int = 30):
 
         # assert len(data.columns) == 8
 

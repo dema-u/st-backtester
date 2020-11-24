@@ -40,7 +40,7 @@ class Pips:
         self.jpy_pair = jpy_pair
 
     @property
-    def price_units(self) -> float:
+    def price(self) -> float:
         return self.pips * self.pip_standard if (not self.jpy_pair) else self.pips * self.pip_jpy
 
     def __add__(self, other):
