@@ -10,6 +10,8 @@ class Broker:
                  cash: float = 1000.0,
                  leverage: int = 50):
 
+        assert len(data.columns) == 8
+
         self._data = data
 
         self.account = Account(self, cash, leverage)
@@ -49,13 +51,17 @@ class Broker:
         for short_market_order in short_market_orders:
             short_market_order.execute_order(entry_price=prices['OpenAsk'])
 
-        # Check against bid prices
         for long_entry_order in long_entry_orders:
-            pass
+            bid_high, bid_low = prices['HighBid'], prices['LowBid']
 
-        # Check against ask prices
+            if bid_low < long_entry_order.stop < bid_high:
+                long_entry_order.execute_order(long_entry_order.stop)
+
         for short_entry_order in short_entry_orders:
-            pass
+            ask_high, ask_low = prices['HighAsk'], prices['LowAsk']
+
+            if ask_low < short_entry_order.stop < ask_high:
+                short_entry_order.execute_order(short_entry_order.stop)
 
     def _process_positions(self):
 
@@ -66,11 +72,31 @@ class Broker:
 
         # Need to sell, so check against ask prices
         for long_position in long_positions:
-            pass
+            ask_high, ask_low = prices['HighAsk'], prices['LowAsk']
+
+            if ask_low < long_position.tp < ask_high:
+                long_position.update(long_position.tp)
+                position_pnl = long_position.close()
+                self.account.process_pnl(position_pnl)
+
+            elif ask_low < long_position.sl < ask_high:
+                long_position.update(long_position.sl)
+                position_pnl = long_position.close()
+                self.account.process_pnl(position_pnl)
 
         # Need to buy, so check against bid prices
         for short_position in short_positions:
-            pass
+            bid_high, bid_low = prices['HighBid'], prices['LowBid']
+
+            if bid_low < short_position.tp < bid_high:
+                short_position.update(short_position.tp)
+                position_pnl = short_position.close()
+                self.account.process_pnl(position_pnl)
+
+            elif bid_low < short_position < bid_high:
+                short_position.update(short_position.sl)
+                position_pnl = short_position.close()
+                self.account.process_pnl(position_pnl)
 
     def open_entry_order(self,
                          is_long: bool,
@@ -82,7 +108,7 @@ class Broker:
                          tag: str = None):
 
         if size > self.available_size:
-            message = f'Not enough cash to submit this trade. Available {self.available_size}, Requested: {size}'
+            message = f'Not enough cash to submit this order. Available {self.available_size}, Requested: {size}.'
             raise AttributeError(message)
 
         EntryOrder(self, is_long=is_long, size=size, limit=limit, stop=stop, tp=tp, sl=sl, tag=tag)
@@ -95,13 +121,17 @@ class Broker:
                           tag: str = None):
 
         if size > self.available_size:
-            message = f'Not enough cash to submit this trade. Available {self.available_size}, Requested: {size}'
+            message = f'Not enough cash to submit this order. Available {self.available_size}, Requested: {size}.'
             raise AttributeError(message)
 
         MarketOrder(self, is_long=is_long, size=size, tp=tp, sl=sl, tag=tag)
 
     def get_historical_prices(self, history_len: int = 24) -> pd.DataFrame:
         return self._data.iloc[self._index - history_len:self._index]
+
+    @property
+    def leverage(self):
+        return self.account.leverage
 
     @property
     def equity(self) -> float:

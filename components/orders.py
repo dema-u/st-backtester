@@ -102,6 +102,9 @@ class EntryOrder(Order):
 
         assert ((limit is not None) or (stop is not None))
 
+        if limit is not None:
+            raise NotImplemented
+
         if is_long:
             assert sl < tp
         else:

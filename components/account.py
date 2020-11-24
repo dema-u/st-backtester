@@ -21,9 +21,13 @@ class Account:
         self._cash += pnl
 
     @property
+    def leverage(self):
+        return self._leverage
+
+    @property
     def used_margin(self) -> float:
         total_amount_positions = sum((position.size for position in self.broker.positions)) * 1000
-        return total_amount_positions / self._leverage
+        return total_amount_positions / self.leverage
 
     @property
     def available_margin(self) -> float:
@@ -31,7 +35,7 @@ class Account:
 
     @property
     def available_size(self) -> float:
-        return (self.available_margin * self._leverage) / self.LOT
+        return (self.available_margin * self.leverage) / self.LOT
 
     @property
     def equity(self) -> float:
