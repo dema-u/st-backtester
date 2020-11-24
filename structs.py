@@ -35,7 +35,7 @@ class Pips:
     pip_standard = 0.0001
     pip_jpy = 0.01
 
-    def __init__(self, pips: int, jpy_pair: bool = False):
+    def __init__(self, pips: float, jpy_pair: bool = False):
         self.pips = pips
         self.jpy_pair = jpy_pair
 
