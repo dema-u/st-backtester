@@ -1,6 +1,7 @@
 # My Specifics
 data
 .idea
+notebooks
 
 # Template
 __pycache__/

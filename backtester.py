@@ -22,6 +22,8 @@ class Broker:
         self._index = 0
         self._end_index = len(data)
 
+        self.equity_history = [self.equity]
+
     def reset(self):
 
         self.account.reset()
@@ -35,12 +37,11 @@ class Broker:
         self._process_orders()
         self._process_positions()
 
+        self.equity_history.append(self.equity)
+
     def _process_orders(self):
 
         prices = self._current_prices
-
-        long_entry_orders = [order for order in self.orders if order.is_long and isinstance(order, EntryOrder)]
-        short_entry_orders = [order for order in self.orders if (not order.is_long) and isinstance(order, EntryOrder)]
 
         long_market_orders = [order for order in self.orders if order.is_long and isinstance(order, MarketOrder)]
         short_market_orders = [order for order in self.orders if (not order.is_long) and isinstance(order, MarketOrder)]
@@ -50,6 +51,9 @@ class Broker:
 
         for short_market_order in short_market_orders:
             short_market_order.execute_order(entry_price=prices['OpenAsk'])
+
+        long_entry_orders = [order for order in self.orders if order.is_long and isinstance(order, EntryOrder)]
+        short_entry_orders = [order for order in self.orders if (not order.is_long) and isinstance(order, EntryOrder)]
 
         for long_entry_order in long_entry_orders:
             bid_high, bid_low = prices['HighBid'], prices['LowBid']
@@ -72,7 +76,7 @@ class Broker:
 
         # Need to sell, so check against ask prices
         for long_position in long_positions:
-            ask_high, ask_low = prices['HighAsk'], prices['LowAsk']
+            ask_high, ask_low, ask_close = prices['HighAsk'], prices['LowAsk'], prices['CloseAsk']
 
             if ask_low < long_position.tp < ask_high:
                 long_position.update(long_position.tp)
@@ -84,9 +88,12 @@ class Broker:
                 position_pnl = long_position.close()
                 self.account.process_pnl(position_pnl)
 
+            else:
+                long_position.update(ask_close)
+
         # Need to buy, so check against bid prices
         for short_position in short_positions:
-            bid_high, bid_low = prices['HighBid'], prices['LowBid']
+            bid_high, bid_low, bid_close = prices['HighBid'], prices['LowBid'], prices['CloseBid']
 
             if bid_low < short_position.tp < bid_high:
                 short_position.update(short_position.tp)
@@ -97,6 +104,9 @@ class Broker:
                 short_position.update(short_position.sl)
                 position_pnl = short_position.close()
                 self.account.process_pnl(position_pnl)
+
+            else:
+                short_position.update(bid_close)
 
     def open_entry_order(self,
                          is_long: bool,
@@ -149,6 +159,10 @@ class Broker:
     def current_spread(self):
         current_prices = self._current_prices
         return current_prices['BidClose'] - current_prices['AskClose']
+
+    @property
+    def historical_equity(self):
+        return pd.Series(data=self.equity_history, index=self._data.index)
 
     @property
     def _current_prices(self) -> pd.Series:
