@@ -1,8 +1,10 @@
 import pandas as pd
+import numpy as np
 from structs import Pips
+from typing import Optional, Tuple
 
 
-class FractalCorridor:
+class FractalStrategy:
 
     def __init__(self,
                  target_level: float = 4.1,
@@ -10,7 +12,8 @@ class FractalCorridor:
                  break_level: Pips = Pips(2),
                  sl_extension: Pips = Pips(1),
                  max_width: Pips = Pips(12),
-                 min_width: Pips = Pips(2)):
+                 min_width: Pips = Pips(2),
+                 risk: float = 0.10):
 
         self._target_level = target_level
         self._back_level = back_level
@@ -19,9 +22,11 @@ class FractalCorridor:
         self._max_width = max_width
         self._min_width = min_width
 
-    def get_long_order(self, upper_fractal: float, lower_fractal: float):
+        self._risk = risk
 
-        if self.wide_corrdidor(upper_fractal, lower_fractal):
+    def get_long_order(self, upper_fractal: float, lower_fractal: float) -> Tuple[float, float, float, float]:
+
+        if not self.valid_corridor(upper_fractal, lower_fractal):
             raise AttributeError('The submitted corridor is too large or too small.')
 
         width = upper_fractal - lower_fractal
@@ -34,9 +39,9 @@ class FractalCorridor:
 
         return target_level, back_level, entry_level, sl_level
 
-    def get_short_order(self, upper_fractal: float, lower_fractal: float):
+    def get_short_order(self, upper_fractal: float, lower_fractal: float) -> Tuple[float, float, float, float]:
 
-        if self.wide_corridor(upper_fractal, lower_fractal):
+        if not self.valid_corridor(upper_fractal, lower_fractal):
             raise AttributeError('The submitted corridor is too large or too small.')
 
         width = upper_fractal - lower_fractal
@@ -49,7 +54,9 @@ class FractalCorridor:
 
         return target_level, back_level, entry_level, sl_level
 
-    def wide_corridor(self, upper_fractal: float, lower_fractal: float) -> bool:
+    def valid_corridor(self, upper_fractal: float, lower_fractal: float) -> bool:
+
+        assert upper_fractal > lower_fractal
 
         width = upper_fractal - lower_fractal
 
@@ -57,9 +64,44 @@ class FractalCorridor:
         min_width_price = self.min_width.price
 
         if min_width_price < width < max_width_price:
-            return False
-        else:
             return True
+        else:
+            return False
+
+    def get_position_size(self, capital: float, entry: float, sl: float) -> float:
+        if entry > sl:
+            distance_to_sl = (entry - sl)/entry
+        else:
+            distance_to_sl = (sl - entry)/entry
+
+        position_size = (capital * self._risk) / distance_to_sl
+
+        return position_size
+
+    def get_fractals(self, historical_price: pd.DataFrame) -> Optional[Tuple[float, float]]:
+
+        latest_price = ((historical_price['BidClose'] + historical_price['AskClose'])/2).iloc[-1]
+
+        processed = pd.DataFrame()
+
+        processed['High'] = (historical_price['BidHigh'] + historical_price['AskHigh']) / 2
+        processed['Low'] = (historical_price['BidLow'] + historical_price['AskLow']) / 2
+
+        processed['UpperFractal'] = np.where(
+            (processed['High'] > processed['High'].shift(1)) & (processed['High'] > processed['High'].shift(-1)), True,
+            False)
+
+        processed['LowerFractal'] = np.where(
+            (processed['Low'] < processed['Low'].shift(1)) & (processed['Low'] < processed['Low'].shift(-1)), True,
+            False)
+
+        upper_fractal = processed[processed['UpperFractal'] is True]['High'].iloc[-1]
+        lower_fractal = processed[processed['LowerFractal'] is True]['Low'].iloc[-1]
+
+        if upper_fractal > latest_price > lower_fractal and self.valid_corridor(upper_fractal, lower_fractal):
+            return upper_fractal, lower_fractal
+        else:
+            return None
 
     @property
     def target_level(self):

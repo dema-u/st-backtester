@@ -45,13 +45,13 @@ class Position:
     def update(self, latest_price: float):
 
         self._latest_price = latest_price
-        pct_change = (latest_price - self.entry_price) / self.entry_price
 
         if self.is_long:
             assert (self.tp >= latest_price >= self.sl)
+            pct_change = (latest_price - self.entry_price) / self.entry_price
         else:
             assert (self.tp <= latest_price <= self.sl)
-            pct_change *= -1
+            pct_change = (self.entry_price - latest_price) / self.entry_price
 
         self._pnl = (self._size * 1000) * pct_change
 

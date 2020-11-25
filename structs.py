@@ -22,6 +22,13 @@ class CurrencyPair:
             return self.PRECISION
 
     @property
+    def jpy_pair(self):
+        if self.num_currency == 'JPY' or self.den_currency == 'JPY':
+            return True
+        else:
+            return False
+
+    @property
     def name(self):
         return self._pair
 

@@ -95,7 +95,7 @@ class Broker:
                 long_position.update(ask_close)
 
         for short_position in short_positions:
-            bid_high, bid_low, bid_close = prices['BidHigh'], prices['BidClose'], prices['BidClose']
+            bid_high, bid_low, bid_close = prices['BidHigh'], prices['BidLow'], prices['BidClose']
 
             if bid_low < short_position.tp < bid_high:
                 short_position.update(short_position.tp)
