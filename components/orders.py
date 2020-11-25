@@ -27,10 +27,7 @@ class Order(metaclass=abc.ABCMeta):
         self._size = int(size)
         self._executed = False
 
-        if tag is None:
-            self.tag = str(uuid.uuid1())
-        else:
-            self.tag = tag
+        self.tag = tag
 
     def execute_order(self, entry_price: float):
         self.broker.orders.remove(self)
@@ -40,7 +37,8 @@ class Order(metaclass=abc.ABCMeta):
                  size=self._size,
                  entry_price=entry_price,
                  tp=self._tp,
-                 sl=self._sl)
+                 sl=self._sl,
+                 tag=self.tag)
 
         self._executed = True
 

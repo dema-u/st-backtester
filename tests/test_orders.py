@@ -13,9 +13,9 @@ def broker():
 
 def test_market_order_insertion(broker):
     broker.open_market_order(is_long=True,
-                                   tp=1.0,
-                                   sl=0.1,
-                                   size=1)
+                             tp=1.0,
+                             sl=0.1,
+                             size=1)
 
     orders = broker.orders
     order = orders[0]

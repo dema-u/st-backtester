@@ -4,7 +4,6 @@ from typing import List
 
 
 class DataManager:
-
     _DATA_FOLDER = 'data'
 
     _RAW_FOLDER = 'raw'
@@ -42,7 +41,7 @@ class DataManager:
         data.to_csv(full_data_path)
 
     @staticmethod
-    def read_price_data(ticker: str, freq: str, raw: bool) -> pd.DataFrame:
+    def read_price_data(ticker: str, freq: str, raw: bool = False) -> pd.DataFrame:
         base_data_path = os.path.abspath(DataManager._DATA_FOLDER)
         ticker_file = ticker + '.csv'
 

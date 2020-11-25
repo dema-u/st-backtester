@@ -8,7 +8,8 @@ class Position:
                  size: int,
                  entry_price: float,
                  tp: float,
-                 sl: float):
+                 sl: float,
+                 tag: str):
 
         if is_long:
             assert sl < entry_price < tp
@@ -21,6 +22,7 @@ class Position:
         self._entry_price = entry_price
         self._tp = tp
         self._sl = sl
+        self._tag = tag
 
         self._size = int(size)
 
@@ -30,6 +32,7 @@ class Position:
         self._pnl = None
 
         self._closed = False
+        self.isback = False
 
         self.broker.positions.insert(0, self)
 
@@ -76,6 +79,10 @@ class Position:
         return self._closed
 
     @property
+    def tag(self):
+        return self._tag
+
+    @property
     def sl(self):
         return self._sl
 
@@ -83,9 +90,9 @@ class Position:
     def sl(self, new_sl: float):
 
         if self.is_long:
-            assert new_sl < self._entry_price < self.tp
+            assert new_sl < self._latest_price < self.tp
         else:
-            assert self.tp < self._entry_price < new_sl
+            assert self.tp < self._latest_price < new_sl
 
         self._sl = new_sl
 
@@ -97,8 +104,8 @@ class Position:
     def tp(self, new_tp: float):
 
         if self.is_long:
-            assert self.sl < self._entry_price < new_tp
+            assert self.sl < self._latest_price < new_tp
         else:
-            assert new_tp < self._entry_price < self.sl
+            assert new_tp < self._latest_price < self.sl
 
         self._tp = new_tp

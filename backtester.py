@@ -23,7 +23,7 @@ class Broker:
         self._index = 0
         self._end_index = len(data)
 
-        self.equity_history = [self.equity]
+        self._equity_history = [self.equity]
 
     def reset(self):
 
@@ -41,7 +41,7 @@ class Broker:
         self._process_orders()
         self._process_positions()
 
-        self.equity_history.append(self.equity)
+        self._equity_history.append(self.equity)
 
     def _process_orders(self):
 
@@ -94,6 +94,10 @@ class Broker:
             else:
                 long_position.update(ask_close)
 
+            if long_position.tag is not None:
+                if ask_low < long_position.tag < ask_high:
+                    long_position.isback = True
+
         for short_position in short_positions:
             bid_high, bid_low, bid_close = prices['BidHigh'], prices['BidLow'], prices['BidClose']
 
@@ -110,6 +114,10 @@ class Broker:
             else:
                 short_position.update(bid_close)
 
+            if short_position.tag is not None:
+                if bid_low < short_position.tag < bid_high:
+                    short_position.isback = True
+
     def open_entry_order(self,
                          is_long: bool,
                          limit: Optional[float],
@@ -117,7 +125,7 @@ class Broker:
                          tp: float,
                          sl: float,
                          size: int,
-                         tag: str = None):
+                         tag=None):
 
         if size > self.available_size:
             message = f'Not enough cash to submit this order. Available {self.available_size}, Requested: {size}.'
@@ -138,8 +146,11 @@ class Broker:
 
         MarketOrder(self, is_long=is_long, size=size, tp=tp, sl=sl, tag=tag)
 
-    def get_historical_prices(self, history_len: int = 24) -> pd.DataFrame:
-        return self._data.iloc[self._index-history_len+1:self._index+1]
+    def get_historical_prices(self, history_len: int = 24) -> Optional[pd.DataFrame]:
+        if self._index < history_len:
+            return None
+        else:
+            return self._data.iloc[self._index-history_len+1:self._index+1]
 
     @property
     def leverage(self):
@@ -148,6 +159,14 @@ class Broker:
     @property
     def equity(self) -> float:
         return self.account.equity
+
+    @property
+    def open_orders(self):
+        return list(self.orders)
+
+    @property
+    def open_positions(self):
+        return list(self.positions)
 
     @property
     def available_size(self) -> float:
@@ -164,7 +183,7 @@ class Broker:
 
     @property
     def historical_equity(self):
-        return pd.Series(data=self.equity_history, index=self._data.index)
+        return self._equity_history
 
     @property
     def backtest_done(self):

@@ -70,17 +70,17 @@ class FractalStrategy:
 
     def get_position_size(self, capital: float, entry: float, sl: float) -> float:
         if entry > sl:
-            distance_to_sl = (entry - sl)/entry
+            distance_to_sl = (entry - sl) / entry
         else:
-            distance_to_sl = (sl - entry)/entry
+            distance_to_sl = (sl - entry) / entry
 
         position_size = (capital * self._risk) / distance_to_sl
 
-        return position_size
+        return position_size // 1000
 
     def get_fractals(self, historical_price: pd.DataFrame) -> Optional[Tuple[float, float]]:
 
-        latest_price = ((historical_price['BidClose'] + historical_price['AskClose'])/2).iloc[-1]
+        latest_price = ((historical_price['BidClose'] + historical_price['AskClose']) / 2).iloc[-1]
 
         processed = pd.DataFrame()
 
@@ -95,13 +95,13 @@ class FractalStrategy:
             (processed['Low'] < processed['Low'].shift(1)) & (processed['Low'] < processed['Low'].shift(-1)), True,
             False)
 
-        upper_fractal = processed[processed['UpperFractal'] is True]['High'].iloc[-1]
-        lower_fractal = processed[processed['LowerFractal'] is True]['Low'].iloc[-1]
+        upper_fractal = processed[processed['UpperFractal'] == True]['High'].iloc[-1]
+        lower_fractal = processed[processed['LowerFractal'] == True]['Low'].iloc[-1]
 
         if upper_fractal > latest_price > lower_fractal and self.valid_corridor(upper_fractal, lower_fractal):
             return upper_fractal, lower_fractal
         else:
-            return None
+            return None, None
 
     @property
     def target_level(self):
