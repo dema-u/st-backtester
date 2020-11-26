@@ -3,6 +3,12 @@ import pandas as pd
 from typing import List
 
 
+class DataHandler:
+
+    def __init__(self):
+        pass
+
+
 class DataManager:
     _DATA_FOLDER = 'data'
 

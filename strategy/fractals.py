@@ -98,6 +98,9 @@ class FractalStrategy:
         upper_fractal = processed[processed['UpperFractal'] == True]['High'].iloc[-1]
         lower_fractal = processed[processed['LowerFractal'] == True]['Low'].iloc[-1]
 
+        print("Upper Fractal Date: ", processed[processed['UpperFractal'] == True]['High'].index[-1])
+        print("Lower Fractal Date: ", processed[processed['LowerFractal'] == True]['Low'].index[-1])
+
         if upper_fractal > latest_price > lower_fractal and self.valid_corridor(upper_fractal, lower_fractal):
             return upper_fractal, lower_fractal
         else:

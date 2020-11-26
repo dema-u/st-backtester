@@ -31,7 +31,7 @@ class Account:
 
     @property
     def available_margin(self) -> float:
-        return self._cash - self.used_margin
+        return self._cash
 
     @property
     def available_size(self) -> float:

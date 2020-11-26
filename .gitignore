@@ -2,6 +2,7 @@
 data
 .idea
 notebooks
+notebooks/api.ipynb
 
 # Template
 __pycache__/

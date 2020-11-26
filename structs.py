@@ -5,7 +5,7 @@ class CurrencyPair:
 
     def __init__(self, pair: str):
 
-        if len(pair) == 7 and pair[4] == '/':
+        if len(pair) == 7 and pair[3] == '/':
             pair = pair.replace('/', '')
 
         assert len(pair) == 6, "Currency name is incorrect format!"

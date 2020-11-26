@@ -127,7 +127,7 @@ class Broker:
                          size: int,
                          tag=None):
 
-        if size > self.available_size:
+        if False: #size > self.available_size:
             message = f'Not enough cash to submit this order. Available {self.available_size}, Requested: {size}.'
             raise AttributeError(message)
 
@@ -140,7 +140,7 @@ class Broker:
                           size: int,
                           tag: str = None):
 
-        if size > self.available_size:
+        if False: #size > self.available_size:
             message = f'Not enough cash to submit this order. Available {self.available_size}, Requested: {size}.'
             raise AttributeError(message)
 

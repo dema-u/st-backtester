@@ -90,9 +90,9 @@ class Position:
     def sl(self, new_sl: float):
 
         if self.is_long:
-            assert new_sl < self._latest_price < self.tp
+            assert new_sl < self._latest_price
         else:
-            assert self.tp < self._latest_price < new_sl
+            assert self._latest_price < new_sl
 
         self._sl = new_sl
 
@@ -104,8 +104,8 @@ class Position:
     def tp(self, new_tp: float):
 
         if self.is_long:
-            assert self.sl < self._latest_price < new_tp
+            assert self._latest_price < new_tp
         else:
-            assert new_tp < self._latest_price < self.sl
+            assert new_tp < self._latest_price
 
         self._tp = new_tp

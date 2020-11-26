@@ -24,6 +24,8 @@ class StrategyRunner:
 
         while not broker.backtest_done:
 
+            print(f"{self.broker.current_time}: {round(self.broker.equity, 2)}$. Positions {len(self.broker.positions)}, Orders: {len(self.broker.orders)}")
+
             historical_prices = self.broker.get_historical_prices(history_len=24)
 
             if len(self.broker.open_positions) == 0 and len(self.broker.open_orders) == 0:
@@ -81,12 +83,13 @@ class StrategyRunner:
             order_long = True
 
         position.sl = entry
+        capital = self.broker.account.available_margin
+        size = self.corridor.get_position_size(capital=capital, entry=entry, sl=sl)
 
         for order in self.broker.open_orders:
             order.cancel()
 
-        capital = self.broker.account.available_margin
-        size = self.corridor.get_position_size(capital=capital, entry=entry, sl=sl)
+        print(f'Placing backward offer! Size: {size}, position size: {position.size}')
 
         self.broker.open_entry_order(is_long=order_long,
                                      limit=None,
@@ -97,6 +100,7 @@ class StrategyRunner:
                                      tag=back)
 
     def _place_starting_orders(self, upper_fractal, lower_fractal):
+        print("Placing starting order!")
         target_l, back_l, entry_l, sl_l = self.corridor.get_long_order(upper_fractal, lower_fractal)
         target_s, back_s, entry_s, sl_s = self.corridor.get_short_order(upper_fractal, lower_fractal)
 
@@ -151,13 +155,16 @@ if __name__ == '__main__':
     target_level = 4.0
     back_level = 2.1
     break_level = Pips(2, jpy_pair)
-    sl_extension = Pips(0, jpy_pair)
+    sl_extension = Pips(1, jpy_pair)
     max_width = Pips(12, jpy_pair)
     min_width = Pips(2, jpy_pair)
-    risk = 0.010
+    risk = 0.015
 
     data = DataManager.read_price_data('EURUSD', 'm5')
-    data_subset = data.iloc[220:1690]
+    # data_subset = data.iloc[220:1690]
+    # data_subset = data.iloc[434775:434775+1458]
+    data_subset = data.iloc[436233:437701]
+    # data_subset = data.iloc[436233 + 1458 + 10:436233 + 1458 + 10 + 1458]
 
     strategy = FractalStrategy(target_level=target_level,
                                back_level=back_level,
@@ -175,4 +182,5 @@ if __name__ == '__main__':
                             corridor=strategy)
 
     runner.run()
-    print(broker.equity)
+    equity_history = broker._equity_history
+    breakpoint_ = 1
