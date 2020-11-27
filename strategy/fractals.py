@@ -76,7 +76,7 @@ class FractalStrategy:
 
         position_size = (capital * self._risk) / distance_to_sl
 
-        return position_size // 1000
+        return int(position_size // 1000)
 
     def get_fractals(self, historical_price: pd.DataFrame) -> Optional[Tuple[float, float]]:
 
@@ -98,6 +98,7 @@ class FractalStrategy:
         upper_fractal = processed[processed['UpperFractal'] == True]['High'].iloc[-1]
         lower_fractal = processed[processed['LowerFractal'] == True]['Low'].iloc[-1]
 
+        # TODO: redo as log
         print("Upper Fractal Date: ", processed[processed['UpperFractal'] == True]['High'].index[-1])
         print("Lower Fractal Date: ", processed[processed['LowerFractal'] == True]['Low'].index[-1])
 

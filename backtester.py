@@ -114,6 +114,7 @@ class Broker:
             else:
                 short_position.update(bid_close)
 
+            # TODO: come up with a better way of handling these
             if short_position.tag is not None:
                 if bid_low < short_position.tag < bid_high:
                     short_position.isback = True
@@ -127,7 +128,7 @@ class Broker:
                          size: int,
                          tag=None):
 
-        if False: #size > self.available_size:
+        if size > self.available_size:
             message = f'Not enough cash to submit this order. Available {self.available_size}, Requested: {size}.'
             raise AttributeError(message)
 
@@ -140,7 +141,7 @@ class Broker:
                           size: int,
                           tag: str = None):
 
-        if False: #size > self.available_size:
+        if size > self.available_size:
             message = f'Not enough cash to submit this order. Available {self.available_size}, Requested: {size}.'
             raise AttributeError(message)
 
