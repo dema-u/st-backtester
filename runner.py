@@ -2,7 +2,7 @@ import pandas as pd
 from backtester import Broker
 from strategy.fractals import FractalStrategy
 from structs import CurrencyPair, Pips
-from utils import DataManager
+from utils import DataManager, DataHandler
 
 
 class StrategyRunner:
@@ -146,22 +146,23 @@ class StrategyRunner:
 
 if __name__ == '__main__':
 
-    pair = CurrencyPair('EURUSD')
+    pair = CurrencyPair('GBPUSD')
     jpy_pair: bool = pair.jpy_pair
+    freq = 'm5'
 
     cash = 1000.0
     leverage = 30
 
     target_level = 4.0
-    back_level = 2.1
-    break_level = Pips(2, jpy_pair)
-    sl_extension = Pips(1, jpy_pair)
+    back_level = 2.0
+    break_level = Pips(3, jpy_pair)
+    sl_extension = Pips(2, jpy_pair)
     max_width = Pips(12, jpy_pair)
-    min_width = Pips(2, jpy_pair)
-    risk = 0.015
+    min_width = Pips(3, jpy_pair)
+    risk = 0.01
 
-    data = DataManager.read_price_data('EURUSD', 'm5')
-    data_handler = D
+    data_handler = DataHandler(currency_pair=pair, freq='m5')
+    data_subset = data_handler.get_week(2020, 47)
 
     strategy = FractalStrategy(target_level=target_level,
                                back_level=back_level,
