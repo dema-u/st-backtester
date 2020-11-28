@@ -161,10 +161,7 @@ if __name__ == '__main__':
     risk = 0.015
 
     data = DataManager.read_price_data('EURUSD', 'm5')
-    # data_subset = data.iloc[220:1690]
-    # data_subset = data.iloc[434775:434775+1458]
-    data_subset = data.iloc[436233:437701]
-    # data_subset = data.iloc[436233 + 1458 + 10:436233 + 1458 + 10 + 1458]
+    data_handler = D
 
     strategy = FractalStrategy(target_level=target_level,
                                back_level=back_level,

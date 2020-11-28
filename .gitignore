@@ -3,6 +3,7 @@ data
 .idea
 notebooks
 notebooks/api.ipynb
+.DS_Store
 
 # Template
 __pycache__/

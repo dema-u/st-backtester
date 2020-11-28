@@ -68,7 +68,7 @@ class FractalStrategy:
         else:
             return False
 
-    def get_position_size(self, capital: float, entry: float, sl: float) -> float:
+    def get_position_size(self, capital: float, entry: float, sl: float) -> int:
         if entry > sl:
             distance_to_sl = (entry - sl) / entry
         else:

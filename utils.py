@@ -1,12 +1,8 @@
 import os
 import pandas as pd
 from typing import List
-
-
-class DataHandler:
-
-    def __init__(self):
-        pass
+from structs import CurrencyPair
+from typing import Tuple
 
 
 class DataManager:
@@ -66,3 +62,29 @@ class DataManager:
     @staticmethod
     def clean_directories(tickers: List[str], freqs: List[str]):
         raise NotImplementedError
+
+
+class DataHandler:
+
+    def __init__(self, currency_pair: CurrencyPair, freq: str) -> None:
+        self._currency_pair = currency_pair
+        self._freq = freq
+
+        data = DataManager.read_price_data(currency_pair.name, freq=freq, raw=False)
+
+        self._data = data[data.index.day_name() != 'Sunday']
+        self.years = {n.year: g for n, g in data.groupby(pd.Grouper(level=0, freq='Y'))}
+
+        for year, data in self.years.items():
+            self.years[year] = [g for _, g in data.groupby(pd.Grouper(level=0, freq='W'))]
+
+    def get_week(self, year: int, week: int) -> pd.DataFrame:
+        assert 0 < week < 52
+
+        return self.years[year][week]
+
+    def get_week_dates(self, year: int, week: int) -> Tuple[pd.Timestamp, pd.Timestamp]:
+        start_date = self.years[year][week].index[0]
+        end_date = self.years[year][week].index[-1]
+
+        return start_date, end_date
