@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from typing import List
 from structs import CurrencyPair
-from typing import Tuple
+from typing import Tuple, List
 
 
 class DataManager:
@@ -67,6 +67,7 @@ class DataManager:
 class DataHandler:
 
     def __init__(self, currency_pair: CurrencyPair, freq: str) -> None:
+
         self._currency_pair = currency_pair
         self._freq = freq
 
@@ -79,12 +80,21 @@ class DataHandler:
             self.years[year] = [g for _, g in data.groupby(pd.Grouper(level=0, freq='W'))]
 
     def get_week(self, year: int, week: int) -> pd.DataFrame:
-        assert 0 < week < 52
 
-        return self.years[year][week]
+        assert year in self.get_available_years(), f"No week data for week {week}, {year}"
+        assert week in self.get_available_weeks(year), f"No week data for week {week}, {year}"
+
+        return self.years[year][week-1]
 
     def get_week_dates(self, year: int, week: int) -> Tuple[pd.Timestamp, pd.Timestamp]:
-        start_date = self.years[year][week].index[0]
-        end_date = self.years[year][week].index[-1]
+
+        start_date = self.years[year][week-1].index[0]
+        end_date = self.years[year][week-1].index[-1]
 
         return start_date, end_date
+
+    def get_available_weeks(self, year) -> List[int]:
+        return [week+1 for week in range(len(self.years[year]))]
+
+    def get_available_years(self) -> List[int]:
+        return list(self.years.keys())

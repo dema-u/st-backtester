@@ -14,8 +14,6 @@ class StrategyRunner:
         self._broker = broker
         self._corridor = corridor
 
-        self._double_ordered = 0
-
     def run(self):
         self.broker.reset()
         self._preprocess_broker()
@@ -24,7 +22,8 @@ class StrategyRunner:
 
         while not broker.backtest_done:
 
-            print(f"{self.broker.current_time}: {round(self.broker.equity, 2)}$. Positions {len(self.broker.positions)}, Orders: {len(self.broker.orders)}")
+            print(
+                f"{self.broker.current_time}: {round(self.broker.equity, 2)}$. Positions {len(self.broker.positions)}, Orders: {len(self.broker.orders)}")
 
             historical_prices = self.broker.get_historical_prices(history_len=24)
 
@@ -146,7 +145,7 @@ class StrategyRunner:
 
 if __name__ == '__main__':
 
-    pair = CurrencyPair('GBPUSD')
+    pair = CurrencyPair('EURUSD')
     jpy_pair: bool = pair.jpy_pair
     freq = 'm5'
 
@@ -154,31 +153,42 @@ if __name__ == '__main__':
     leverage = 30
 
     target_level = 4.0
-    back_level = 2.0
-    break_level = Pips(3, jpy_pair)
-    sl_extension = Pips(2, jpy_pair)
-    max_width = Pips(12, jpy_pair)
+    back_level = 2.1
+    break_level = Pips(2, jpy_pair)
+    sl_extension = Pips(1, jpy_pair)
+    max_width = Pips(10, jpy_pair)
     min_width = Pips(3, jpy_pair)
-    risk = 0.01
+    risk = 0.015
+
+    results = dict()
 
     data_handler = DataHandler(currency_pair=pair, freq='m5')
-    data_subset = data_handler.get_week(2020, 47)
+    all_weeks_2020 = data_handler.get_available_weeks(year=2020)
 
-    strategy = FractalStrategy(target_level=target_level,
-                               back_level=back_level,
-                               break_level=break_level,
-                               sl_extension=sl_extension,
-                               max_width=max_width,
-                               min_width=min_width,
-                               risk=risk)
+    for week_2020 in all_weeks_2020:
 
-    broker = Broker(data=data_subset,
-                    cash=1000.0,
-                    leverage=leverage)
+        data_subset = data_handler.get_week(2020, week_2020)
 
-    runner = StrategyRunner(broker=broker,
-                            corridor=strategy)
+        strategy = FractalStrategy(target_level=target_level,
+                                   back_level=back_level,
+                                   break_level=break_level,
+                                   sl_extension=sl_extension,
+                                   max_width=max_width,
+                                   min_width=min_width,
+                                   risk=risk)
 
-    runner.run()
-    equity_history = broker._equity_history
-    breakpoint_ = 1
+        broker = Broker(data=data_subset,
+                        cash=cash,
+                        leverage=leverage)
+
+        runner = StrategyRunner(broker=broker,
+                                corridor=strategy)
+
+        try:
+            runner.run()
+        except:
+            print(f"Week {week_2020} failed")
+        finally:
+            results[week_2020] = runner.broker.equity
+
+    print(results)

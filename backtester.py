@@ -81,13 +81,13 @@ class Broker:
         for long_position in long_positions:
             ask_high, ask_low, ask_close = prices['AskHigh'], prices['AskLow'], prices['AskClose']
 
-            if ask_low < long_position.tp < ask_high:
-                long_position.update(long_position.tp)
+            if ask_low < long_position.sl < ask_high:
+                long_position.update(long_position.sl)
                 position_pnl = long_position.close()
                 self.account.process_pnl(position_pnl)
 
-            elif ask_low < long_position.sl < ask_high:
-                long_position.update(long_position.sl)
+            elif ask_low < long_position.tp < ask_high:
+                long_position.update(long_position.tp)
                 position_pnl = long_position.close()
                 self.account.process_pnl(position_pnl)
 
@@ -101,13 +101,13 @@ class Broker:
         for short_position in short_positions:
             bid_high, bid_low, bid_close = prices['BidHigh'], prices['BidLow'], prices['BidClose']
 
-            if bid_low < short_position.tp < bid_high:
-                short_position.update(short_position.tp)
+            if bid_low < short_position.sl < bid_high:
+                short_position.update(short_position.sl)
                 position_pnl = short_position.close()
                 self.account.process_pnl(position_pnl)
 
-            elif bid_low < short_position.sl < bid_high:
-                short_position.update(short_position.sl)
+            elif bid_low < short_position.tp < bid_high:
+                short_position.update(short_position.tp)
                 position_pnl = short_position.close()
                 self.account.process_pnl(position_pnl)
 
