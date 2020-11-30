@@ -95,8 +95,14 @@ class FractalStrategy:
             (processed['Low'] < processed['Low'].shift(1)) & (processed['Low'] < processed['Low'].shift(-1)), True,
             False)
 
-        upper_fractal = processed[processed['UpperFractal'] == True]['High'].iloc[-1]
-        lower_fractal = processed[processed['LowerFractal'] == True]['Low'].iloc[-1]
+        all_upper = processed[processed['UpperFractal'] == True]['High']
+        all_lower = processed[processed['LowerFractal'] == True]['Low']
+
+        if len(all_upper) == 0 or len(all_lower) == 0:
+            return None, None
+
+        upper_fractal = all_upper.iloc[-1]
+        lower_fractal = all_lower.iloc[-1]
 
         if upper_fractal > latest_price > lower_fractal and self.valid_corridor(upper_fractal, lower_fractal):
             return upper_fractal, lower_fractal

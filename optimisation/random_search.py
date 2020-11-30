@@ -1,0 +1,4 @@
+
+
+class RandomSearch:
+    pass

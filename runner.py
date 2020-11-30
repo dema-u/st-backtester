@@ -53,12 +53,14 @@ class StrategyRunner:
 
             elif len(self.broker.open_positions) == 1 and len(self.broker.open_orders) == 0:
                 if self.broker.positions[0].isback:
+
                     upper_fractal, lower_fractal = self.corridor.get_fractals(historical_prices)
+                    position = self.broker.positions[0]
+
+                    position.sl = position.entry_price
+
                     if upper_fractal is not None and lower_fractal is not None:
                         self._place_opposite_order(upper_fractal, lower_fractal)
-                    else:
-                        position = self.broker.positions[0]
-                        position.sl = position.entry_price
 
             elif len(self.broker.orders) == 1 and len(self.broker.positions) == 0:
                 for order in self.broker.open_orders:
@@ -147,7 +149,7 @@ class StrategyRunner:
 
 if __name__ == '__main__':
 
-    pair = CurrencyPair('EURUSD')
+    pair = CurrencyPair('GBPUSD')
     jpy_pair: bool = pair.jpy_pair
     freq = 'm5'
     year = 2020
@@ -156,18 +158,20 @@ if __name__ == '__main__':
     leverage = 30
 
     target_level = 4.0
-    back_level = 2.1
-    break_level = Pips(2, jpy_pair)
-    sl_extension = Pips(1, jpy_pair)
+    back_level = 2.0
+    break_level = Pips(3, jpy_pair)
+    sl_extension = Pips(2, jpy_pair)
     max_width = Pips(12, jpy_pair)
     min_width = Pips(3, jpy_pair)
-    risk = 0.0150
+    risk = 0.020
 
     results = dict()
     failed_weeks = list()
 
     data_handler = DataHandler(currency_pair=pair, freq='m5')
     all_weeks = data_handler.get_available_weeks(year=year)
+    #all_weeks = [10, 12, 15, 33, 37]
+
     backtest_start_time = default_timer()
 
     for week in tqdm(all_weeks):
