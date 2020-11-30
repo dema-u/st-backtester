@@ -1,10 +1,12 @@
 import pandas as pd
+import multiprocessing
 from timeit import default_timer
 from backtester import Broker
 from strategy.fractals import FractalStrategy
 from structs import CurrencyPair, Pips
 from utils import DataHandler
 from tqdm import tqdm
+from joblib import Parallel, delayed
 
 
 class StrategyRunner:
@@ -22,10 +24,10 @@ class StrategyRunner:
 
         position_lock = False
 
-        while not broker.backtest_done:
+        while not self.broker.backtest_done:
 
-           #print(
-           #    f"{self.broker.current_time}: {round(self.broker.equity, 2)}$. Positions {len(self.broker.positions)}, Orders: {len(self.broker.orders)}")
+            # print(
+            #    f"{self.broker.current_time}: {round(self.broker.equity, 2)}$. Positions {len(self.broker.positions)}, Orders: {len(self.broker.orders)}")
 
             historical_prices = self.broker.get_historical_prices(history_len=24)
 
@@ -147,8 +149,22 @@ class StrategyRunner:
         return self._corridor
 
 
-if __name__ == '__main__':
+def run_backtest(_year, _week, _strategy, _broker):
+    _failed = False
 
+    _runner = StrategyRunner(broker=_broker,
+                             corridor=_strategy)
+    try:
+        _runner.run()
+    except:
+        _failed = True
+    finally:
+        _result = _runner.broker.equity
+
+    return _week, _result, _failed
+
+
+if __name__ == '__main__':
     pair = CurrencyPair('GBPUSD')
     jpy_pair: bool = pair.jpy_pair
     freq = 'm5'
@@ -157,55 +173,47 @@ if __name__ == '__main__':
     cash = 1000.0
     leverage = 30
 
-    target_level = 4.0
-    back_level = 2.0
-    break_level = Pips(3, jpy_pair)
-    sl_extension = Pips(2, jpy_pair)
+    target_level = 3.1
+    back_level = 2.1
+    break_level = Pips(2, jpy_pair)
+    sl_extension = Pips(1, jpy_pair)
     max_width = Pips(12, jpy_pair)
-    min_width = Pips(3, jpy_pair)
-    risk = 0.020
+    min_width = Pips(4, jpy_pair)
+    risk = 0.0160
 
     results = dict()
     failed_weeks = list()
 
     data_handler = DataHandler(currency_pair=pair, freq='m5')
     all_weeks = data_handler.get_available_weeks(year=year)
-    #all_weeks = [10, 12, 15, 33, 37]
 
     backtest_start_time = default_timer()
 
-    for week in tqdm(all_weeks):
+    strategy = FractalStrategy(target_level=target_level,
+                               back_level=back_level,
+                               break_level=break_level,
+                               sl_extension=sl_extension,
+                               max_width=max_width,
+                               min_width=min_width,
+                               risk=risk)
 
-        data_subset = data_handler.get_week(year, week)
+    brokers = {week: Broker(data_handler.get_week(year, week), cash, leverage) for week in all_weeks}
 
-        strategy = FractalStrategy(target_level=target_level,
-                                   back_level=back_level,
-                                   break_level=break_level,
-                                   sl_extension=sl_extension,
-                                   max_width=max_width,
-                                   min_width=min_width,
-                                   risk=risk)
+    num_cores = multiprocessing.cpu_count() - 2
+    result_list = Parallel(n_jobs=num_cores)(delayed(run_backtest)(_year=year,
+                                                                   _week=week,
+                                                                   _strategy=strategy,
+                                                                   _broker=broker) for week, broker in tqdm(brokers.items()))
 
-        broker = Broker(data=data_subset,
-                        cash=cash,
-                        leverage=leverage)
-
-        runner = StrategyRunner(broker=broker,
-                                corridor=strategy)
-
-        try:
-            runner.run()
-        except:
-            failed_weeks.append(week)
-        finally:
-            results[week] = runner.broker.equity
+    results = {week: equity for week, equity, _ in result_list}
+    failed_weeks = [week for week, _, failed in result_list if failed]
 
     backtest_end_time = default_timer()
     results_df = pd.DataFrame(results.items(), columns=['Week', 'Equity']).set_index('Week')
 
     print()
     print('___BACKTEST RESULTS___')
-    print(results_df.describe())
     print(results_df)
     print(f'Failed weeks: {failed_weeks}')
+    print(results_df.describe())
     print(f'Backtest time taken {round(backtest_end_time - backtest_start_time, 2)}s')
