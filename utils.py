@@ -1,6 +1,5 @@
 import os
 import pandas as pd
-from typing import List
 from structs import CurrencyPair
 from typing import Tuple, List
 

@@ -1,8 +1,10 @@
 import pandas as pd
+from timeit import default_timer
 from backtester import Broker
 from strategy.fractals import FractalStrategy
 from structs import CurrencyPair, Pips
-from utils import DataManager, DataHandler
+from utils import DataHandler
+from tqdm import tqdm
 
 
 class StrategyRunner:
@@ -22,8 +24,8 @@ class StrategyRunner:
 
         while not broker.backtest_done:
 
-            print(
-                f"{self.broker.current_time}: {round(self.broker.equity, 2)}$. Positions {len(self.broker.positions)}, Orders: {len(self.broker.orders)}")
+           #print(
+           #    f"{self.broker.current_time}: {round(self.broker.equity, 2)}$. Positions {len(self.broker.positions)}, Orders: {len(self.broker.orders)}")
 
             historical_prices = self.broker.get_historical_prices(history_len=24)
 
@@ -88,7 +90,7 @@ class StrategyRunner:
         for order in self.broker.open_orders:
             order.cancel()
 
-        print(f'Placing backward offer! Size: {size}, position size: {position.size}')
+        # print(f'Placing backward offer! Size: {size}, position size: {position.size}')
 
         self.broker.open_entry_order(is_long=order_long,
                                      limit=None,
@@ -99,7 +101,7 @@ class StrategyRunner:
                                      tag=back)
 
     def _place_starting_orders(self, upper_fractal, lower_fractal):
-        print("Placing starting order!")
+        # print("Placing starting order!")
         target_l, back_l, entry_l, sl_l = self.corridor.get_long_order(upper_fractal, lower_fractal)
         target_s, back_s, entry_s, sl_s = self.corridor.get_short_order(upper_fractal, lower_fractal)
 
@@ -148,6 +150,7 @@ if __name__ == '__main__':
     pair = CurrencyPair('EURUSD')
     jpy_pair: bool = pair.jpy_pair
     freq = 'm5'
+    year = 2020
 
     cash = 1000.0
     leverage = 30
@@ -156,18 +159,20 @@ if __name__ == '__main__':
     back_level = 2.1
     break_level = Pips(2, jpy_pair)
     sl_extension = Pips(1, jpy_pair)
-    max_width = Pips(10, jpy_pair)
+    max_width = Pips(12, jpy_pair)
     min_width = Pips(3, jpy_pair)
-    risk = 0.015
+    risk = 0.0150
 
     results = dict()
+    failed_weeks = list()
 
     data_handler = DataHandler(currency_pair=pair, freq='m5')
-    all_weeks_2020 = data_handler.get_available_weeks(year=2020)
+    all_weeks = data_handler.get_available_weeks(year=year)
+    backtest_start_time = default_timer()
 
-    for week_2020 in all_weeks_2020:
+    for week in tqdm(all_weeks):
 
-        data_subset = data_handler.get_week(2020, week_2020)
+        data_subset = data_handler.get_week(year, week)
 
         strategy = FractalStrategy(target_level=target_level,
                                    back_level=back_level,
@@ -187,8 +192,16 @@ if __name__ == '__main__':
         try:
             runner.run()
         except:
-            print(f"Week {week_2020} failed")
+            failed_weeks.append(week)
         finally:
-            results[week_2020] = runner.broker.equity
+            results[week] = runner.broker.equity
 
-    print(results)
+    backtest_end_time = default_timer()
+    results_df = pd.DataFrame(results.items(), columns=['Week', 'Equity']).set_index('Week')
+
+    print()
+    print('___BACKTEST RESULTS___')
+    print(results_df.describe())
+    print(results_df)
+    print(f'Failed weeks: {failed_weeks}')
+    print(f'Backtest time taken {round(backtest_end_time - backtest_start_time, 2)}s')

@@ -41,7 +41,7 @@ class Order(metaclass=abc.ABCMeta):
                  tag=self.tag)
 
         direction = "Long" if self.is_long else "Short"
-        print(f"Order executed. {direction} position of {self._size} size is opened.")
+        # print(f"Order executed. {direction} position of {self._size} size is opened.")
 
         self._executed = True
 
