@@ -165,6 +165,7 @@ def run_backtest(_year, _week, _strategy, _broker):
 
 
 if __name__ == '__main__':
+
     pair = CurrencyPair('GBPUSD')
     jpy_pair: bool = pair.jpy_pair
     freq = 'm5'
@@ -179,7 +180,7 @@ if __name__ == '__main__':
     sl_extension = Pips(1, jpy_pair)
     max_width = Pips(12, jpy_pair)
     min_width = Pips(4, jpy_pair)
-    risk = 0.0160
+    risk = 0.0150
 
     results = dict()
     failed_weeks = list()
