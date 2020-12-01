@@ -1,4 +1,6 @@
 import datetime
+import schedule
+from trader.trader import Trader
 from typing import List
 
 
@@ -71,3 +73,25 @@ class ScheduleHelper:
             t += datetime.timedelta(minutes=5)
 
         return all_times
+
+
+def initialize_schedule(_trader: Trader) -> None:
+
+    now = datetime.datetime.utcnow()
+
+    helper = ScheduleHelper(time_now=now, frequency='m5')
+
+    for monday_time in helper.monday:
+        schedule.every().monday.at(monday_time).do(_trader.process_timestep)
+
+    for tuesday_time in helper.tuesday:
+        schedule.every().tuesday.at(tuesday_time).do(_trader.process_timestep)
+
+    for wednesday_time in helper.wednesday:
+        schedule.every().wednesday.at(wednesday_time).do(_trader.process_timestep)
+
+    for thursday_time in helper.thursday:
+        schedule.every().thursday.at(thursday_time).do(_trader.process_timestep)
+
+    for friday_time in helper.friday:
+        schedule.every().friday.at(friday_time).do(_trader.process_timestep)
