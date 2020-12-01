@@ -174,7 +174,7 @@ if __name__ == '__main__':
     cash = 1000.0
     leverage = 30
 
-    target_level = 3.1
+    target_level = 4.0
     back_level = 2.1
     break_level = Pips(2, jpy_pair)
     sl_extension = Pips(1, jpy_pair)

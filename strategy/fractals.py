@@ -104,7 +104,10 @@ class FractalStrategy:
         upper_fractal = all_upper.iloc[-1]
         lower_fractal = all_lower.iloc[-1]
 
-        if upper_fractal > latest_price > lower_fractal and self.valid_corridor(upper_fractal, lower_fractal):
+        upper_entry = upper_fractal + self.break_level.price
+        lower_entry = lower_fractal - self.break_level.price
+
+        if upper_entry > latest_price > lower_entry and self.valid_corridor(upper_fractal, lower_fractal):
             return upper_fractal, lower_fractal
         else:
             return None, None

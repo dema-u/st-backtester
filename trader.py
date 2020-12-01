@@ -1,18 +1,18 @@
 import os
 import fxcmpy
-import configparser
 import schedule
 import time
+import datetime
+import configparser
+import logging
 from typing import List
-from datetime import datetime
 from strategy.fractals import FractalStrategy
 from structs import CurrencyPair, Pips
-
 
 RENAMER = {'bidopen': 'BidOpen', 'bidhigh': 'BidHigh', 'bidlow': 'BidLow', 'bidclose': 'BidClose',
            'askopen': 'AskOpen', 'askhigh': 'AskHigh', 'asklow': 'AskLow', 'askclose': 'AskClose'}
 
-COLUMNS = list(RENAMER.keys())
+COLUMNS = list(RENAMER.values())
 
 
 class Trader:
@@ -31,35 +31,108 @@ class Trader:
         self._strategy = strategy
         self._connection = Trader._initialize_connection()
 
-        self._account_id = self._connection.get_account_ids()[0]
-        self._connection.subscribe_market_data(self._pair.fxcm_name)
+        self._longback, self._longback_passed = None, False
+        self._shortback, self._shortback_passed = None, False
+        self._backlock = False
 
-        self._oco_order = None
+        self.close_all_orders()
+        self.close_all_positions()
+
+        self._account_id = self._connection.get_account_ids()[0]
+        self._connection.subscribe_market_data(self._pair.fxcm_name, (self.flag_back_prices, ))
 
         self._logger = logger
 
+        self.process_timestep()
+
     def process_timestep(self):
+
+        if len(self._connection.get_order_ids()) == 1 and len(self._connection.get_open_trade_ids()) == 0:
+            self.close_all_orders()
+
+        if len(self._connection.get_open_trade_ids()) == 0:  # no positions currently
+            self.place_starting_oco()
+        else:
+            # position is either passed back price or not
+            print("Order is already in place.")
+
+    def place_starting_oco(self):
+
+        print('Placing OCO.')
 
         upper_fractal, lower_fractal = self._strategy.get_fractals(self.prices)
 
-        if (upper_fractal is not None) and (lower_fractal is not None) and (lower_fractal < self.latest_price < upper_fractal):
+        if (upper_fractal is not None) and (lower_fractal is not None):
+            print('Suitable fractals found.')
             target_l, back_l, entry_l, sl_l = self._strategy.get_long_order(upper_fractal, lower_fractal)
             target_s, back_s, entry_s, sl_s = self._strategy.get_short_order(upper_fractal, lower_fractal)
+            size = self._strategy.get_position_size(self.available_equity, entry_l, sl_l)
 
-            size = self._strategy.get_position_size(self.available_margin, entry_l, sl_l)
-            if self._oco_order is not None:
-                self.remove_oco_order()
+            if entry_s < self.latest_price < entry_l:
+                print('Fractals are between entries. Cancelling orders and adding new OCO.')
+                if len(self._connection.get_order_ids()) > 0:
+                    self.close_all_orders()
 
-            self._oco_order = self._connection.create_oco_order(symbol=self._pair.fxcm_name, time_in_force='GTC',
-                                                                amount=size,
-                                                                is_buy=True, is_buy2=False,
-                                                                limit=target_l, limit2=target_s,
-                                                                rate=entry_l, rate2=entry_s,
-                                                                stop=sl_l, stop2=sl_s,
-                                                                order_type='MarketRange', at_market=0)
+                _ = self._connection.create_oco_order(symbol=self._pair.fxcm_name, time_in_force='GTC',
+                                                      amount=size,
+                                                      is_buy=True, is_buy2=False,
+                                                      limit=target_l, limit2=target_s,
+                                                      rate=entry_l, rate2=entry_s,
+                                                      stop=sl_l, stop2=sl_s,
+                                                      order_type='MarketRange', at_market=0,
+                                                      is_in_pips=False)
+
+                self._longback, self._shortback = back_l, back_s
+
+            else:
+                print('Current price is outside of entries, cannot place the orders')
 
         else:
-            self.remove_oco_order()
+            print('No suitable fractals. Cancelling orders.')
+            self.close_all_orders()
+            self._longback, self._shortback = None, None
+            self._longback_passed, self._shortback_passed = False, False
+
+    def flag_back_prices(self, _, dataframe):
+
+        # previous_longback, previous_shortback = self._longback_passed, self._shortback_passed
+
+        mid_price = (dataframe.iloc[-1]['Bid'] + dataframe.iloc[-1]['Ask']) / 2
+
+        if self._longback is not None and mid_price > self._longback:
+            self._longback_passed = True
+        if self._shortback is not None and mid_price < self._shortback:
+            self._shortback_passed = True
+
+    def _set_back_trades(self, back_long, back_short) -> None:
+        self._longback, self._shortback = back_long, back_short
+
+    def _reset_back_trades(self) -> None:
+        self._longback, self._shortback = None, None
+        self._longback_passed, self._shortback_passed = False, False
+
+    def adjust_stop_loss(self):
+        pass
+
+    def close_all_orders(self):
+        order_ids = self._connection.get_order_ids()
+
+        for order_id in order_ids:
+            order = self._connection.get_order(order_id)
+            order.delete()
+
+        self._longback, self._longback_passed = None, False
+        self._shortback, self._shortback_passed = None, False
+
+    def close_all_positions(self):
+        position_ids = self._connection.get_open_trade_ids()
+
+        for position_id in position_ids:
+            position = self._connection.get_open_position(position_id)
+            position.close()
+
+    def close_connection(self):
+        self._connection.close()
 
     @property
     def prices(self):
@@ -84,11 +157,9 @@ class Trader:
     def available_margin(self):
         return self._connection.get_accounts_summary()['usableMargin3'][0]
 
-    def remove_oco_order(self):
-        if self._oco_order is not None:
-            for order in self._oco_order.get_orders():
-                order.delete()
-            self._oco_order = None
+    @property
+    def available_equity(self):
+        return self._connection.get_accounts_summary()['equity'][0]
 
     @staticmethod
     def _initialize_connection():
@@ -113,7 +184,6 @@ class Trader:
 
 
 class ScheduleHelper:
-
     day_map = {'Sunday': 1, 'Monday': 2, 'Tuesday': 3, 'Wednesday': 4, 'Thursday': 5, 'Friday': 6, 'Saturday': 7}
 
     def __init__(self, time_now, frequency):
@@ -122,14 +192,20 @@ class ScheduleHelper:
         self._frequency = frequency
 
     def get_schedule(self, day: str):
-        if self.weeknumber_now < ScheduleHelper.day_map[day]:
-            return self.get_time_intervals('00:00', '23:55')
-        elif self.weeknumber_now == ScheduleHelper.day_map[day]:
+        if day == 'Friday':
+            end_time = '20:55'
+        else:
+            end_time = '23:55'
+
+        if self.week_number_now < ScheduleHelper.day_map[day]:
+            return self.get_time_intervals('00:00', end_time)
+        elif self.week_number_now == ScheduleHelper.day_map[day]:
             next_time = self._time_now - datetime.timedelta(minutes=(self._time_now.minute % 5),
                                                             seconds=self._time_now.second,
                                                             microseconds=self._time_now.microsecond)
             next_time += datetime.timedelta(minutes=5)
-            return self.get_time_intervals(next_time.strftime('%H:%M'), '23:55')
+            return self.get_time_intervals(next_time.strftime('%H:%M'), end_time)
+
         else:
             return []
 
@@ -154,8 +230,12 @@ class ScheduleHelper:
         return self.get_schedule('Friday')
 
     @property
-    def weeknumber_now(self) -> int:
-        return self._time_now.strftime('%w') + 1
+    def week_number_now(self) -> int:
+        return ScheduleHelper.day_map[self._time_now.strftime('%A')]
+
+    @property
+    def last_run_time(self) -> datetime:
+        raise NotImplementedError
 
     @staticmethod
     def get_time_intervals(start: str, end: str) -> List[str]:
@@ -175,45 +255,68 @@ class ScheduleHelper:
 
 def initialize_schedule(_trader):
 
-    now = datetime.utcnow()
+    now = datetime.datetime.utcnow()
     # TODO: remove the hardcoded frequency
-    helper = ScheduleHelper(time_now=now, freq='m5')
+    helper = ScheduleHelper(time_now=now, frequency='m5')
 
     for monday_time in helper.monday:
-        schedule.every().monday.at(monday_time).do(trader.process_timestep)
+        schedule.every().monday.at(monday_time).do(_trader.process_timestep)
 
     for tuesday_time in helper.tuesday:
-        schedule.every().tuesday.at(tuesday_time).do(trader.process_timestep)
+        schedule.every().tuesday.at(tuesday_time).do(_trader.process_timestep)
 
     for wednesday_time in helper.wednesday:
-        schedule.every().wednesday.at(wednesday_time).do(trader.process_timestep)
+        schedule.every().wednesday.at(wednesday_time).do(_trader.process_timestep)
 
     for thursday_time in helper.thursday:
-        schedule.every().thursday.at(thursday_time).do(trader.process_timestep)
+        schedule.every().thursday.at(thursday_time).do(_trader.process_timestep)
 
     for friday_time in helper.friday:
-        schedule.every().friday.at(friday_time).do(trader.process_timestep)
+        schedule.every().friday.at(friday_time).do(_trader.process_timestep)
 
 
 if __name__ == '__main__':
 
-    pair = CurrencyPair('GBPUSD')
+    logger = logging.getLogger("Trader")
+    
+
+    abspath_config = os.path.abspath('configs/trader.ini')
+    config = configparser.ConfigParser()
+    config.read(abspath_config)
+
+    trader_section = config['TRADER']
+
+    currency = trader_section['currency']
+    frequency = trader_section['frequency']
+
+    target_level = float(trader_section['target_level'])
+    back_level = float(trader_section['back_level'])
+    break_level = float(trader_section['break_level'])
+    sl_extension = float(trader_section['sl_extension'])
+    max_width = float(trader_section['max_width'])
+    min_width = float(trader_section['min_width'])
+    risk = float(trader_section['risk'])
+
+    pair = CurrencyPair(currency)
     jpy_pair: bool = pair.jpy_pair
-    freq = 'm5'
 
-    strategy = FractalStrategy(target_level=4.0,
-                               back_level=2.1,
-                               break_level=Pips(2, jpy_pair),
-                               sl_extension=Pips(1, jpy_pair),
-                               max_width=Pips(12, jpy_pair),
-                               min_width=Pips(4, jpy_pair),
-                               risk=0.0160)
+    strategy = FractalStrategy(target_level=target_level,
+                               back_level=back_level,
+                               break_level=Pips(break_level, jpy_pair),
+                               sl_extension=Pips(sl_extension, jpy_pair),
+                               max_width=Pips(max_width, jpy_pair),
+                               min_width=Pips(min_width, jpy_pair),
+                               risk=risk)
 
-    trader = Trader(currency_pair=pair, strategy=strategy, freq=freq)
+    trader = Trader(currency_pair=pair, strategy=strategy, freq=frequency)
+    print('trader initialized')
+
+    now = datetime.datetime.utcnow()
+    helper = ScheduleHelper(time_now=now, frequency='m5')
 
     initialize_schedule(trader)
+    print('scheduler initialized')
 
     while True:
         schedule.run_pending()
         time.sleep(1)
-
