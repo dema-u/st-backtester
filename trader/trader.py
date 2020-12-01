@@ -5,7 +5,7 @@ import time
 import datetime
 import configparser
 import logging
-from typing import List
+from trader.schedule import ScheduleHelper
 from strategy.fractals import FractalStrategy
 from structs import CurrencyPair, Pips
 
@@ -16,7 +16,6 @@ COLUMNS = list(RENAMER.values())
 
 
 class Trader:
-
     leverage = 30
 
     def __init__(self,
@@ -33,13 +32,13 @@ class Trader:
 
         self._longback, self._longback_passed = None, False
         self._shortback, self._shortback_passed = None, False
-        self._backlock = False
+        self._backlock = False  # this references the back order -> all other variables reference backward order.
 
         self.close_all_orders()
         self.close_all_positions()
 
         self._account_id = self._connection.get_account_ids()[0]
-        self._connection.subscribe_market_data(self._pair.fxcm_name, (self.flag_back_prices, ))
+        self._connection.subscribe_market_data(self._pair.fxcm_name, (self.flag_back_prices,))
 
         self._logger = logger
 
@@ -82,7 +81,7 @@ class Trader:
                                                       order_type='MarketRange', at_market=0,
                                                       is_in_pips=False)
 
-                self._longback, self._shortback = back_l, back_s
+                self._set_back_trades(back_l, back_s)
 
             else:
                 print('Current price is outside of entries, cannot place the orders')
@@ -105,6 +104,7 @@ class Trader:
             self._shortback_passed = True
 
     def _set_back_trades(self, back_long, back_short) -> None:
+        assert back_long > back_short
         self._longback, self._shortback = back_long, back_short
 
     def _reset_back_trades(self) -> None:
@@ -121,8 +121,7 @@ class Trader:
             order = self._connection.get_order(order_id)
             order.delete()
 
-        self._longback, self._longback_passed = None, False
-        self._shortback, self._shortback_passed = None, False
+        self._reset_back_trades()
 
     def close_all_positions(self):
         position_ids = self._connection.get_open_trade_ids()
@@ -183,84 +182,7 @@ class Trader:
         return connection
 
 
-class ScheduleHelper:
-    day_map = {'Sunday': 1, 'Monday': 2, 'Tuesday': 3, 'Wednesday': 4, 'Thursday': 5, 'Friday': 6, 'Saturday': 7}
-
-    def __init__(self, time_now, frequency):
-
-        self._time_now = time_now
-        self._frequency = frequency
-
-    def get_schedule(self, day: str):
-        if day == 'Friday':
-            end_time = '20:55'
-        else:
-            end_time = '23:55'
-
-        if self.week_number_now < ScheduleHelper.day_map[day]:
-            return self.get_time_intervals('00:00', end_time)
-        elif self.week_number_now == ScheduleHelper.day_map[day]:
-            next_time = self._time_now - datetime.timedelta(minutes=(self._time_now.minute % 5),
-                                                            seconds=self._time_now.second,
-                                                            microseconds=self._time_now.microsecond)
-            next_time += datetime.timedelta(minutes=5)
-            return self.get_time_intervals(next_time.strftime('%H:%M'), end_time)
-
-        else:
-            return []
-
-    @property
-    def monday(self) -> List[str]:
-        return self.get_schedule('Monday')
-
-    @property
-    def tuesday(self) -> List[str]:
-        return self.get_schedule('Tuesday')
-
-    @property
-    def wednesday(self) -> List[str]:
-        return self.get_schedule('Wednesday')
-
-    @property
-    def thursday(self) -> List[str]:
-        return self.get_schedule('Thursday')
-
-    @property
-    def friday(self) -> List[str]:
-        return self.get_schedule('Friday')
-
-    @property
-    def week_number_now(self) -> int:
-        return ScheduleHelper.day_map[self._time_now.strftime('%A')]
-
-    @property
-    def last_run_time(self) -> datetime:
-        raise NotImplementedError
-
-    @staticmethod
-    def get_time_intervals(start: str, end: str) -> List[str]:
-        all_times = []
-
-        start = datetime.datetime.strptime(start, "%H:%M")
-        end = datetime.datetime.strptime(end, "%H:%M")
-
-        t = start
-
-        while t <= end:
-            all_times.append(t.strftime("%H:%M"))
-            t += datetime.timedelta(minutes=5)
-
-        return all_times
-
-
-class Logger:
-
-    def __init__(self):
-        pass
-
-
 def initialize_schedule(_trader):
-
     now = datetime.datetime.utcnow()
     # TODO: remove the hardcoded frequency
     helper = ScheduleHelper(time_now=now, frequency='m5')
