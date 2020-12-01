@@ -253,6 +253,12 @@ class ScheduleHelper:
         return all_times
 
 
+class Logger:
+
+    def __init__(self):
+        pass
+
+
 def initialize_schedule(_trader):
 
     now = datetime.datetime.utcnow()
@@ -277,10 +283,15 @@ def initialize_schedule(_trader):
 
 if __name__ == '__main__':
 
-    logger = logging.getLogger("Trader")
-    
-
     abspath_config = os.path.abspath('configs/trader.ini')
+    abspath_log = os.path.abspath('logs/trader.log')
+
+    logger = logging.getLogger("trader")
+    logger.setLevel(logging.INFO)
+
+    logging_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler = logging.FileHandler(filename=abspath_log)
+
     config = configparser.ConfigParser()
     config.read(abspath_config)
 
