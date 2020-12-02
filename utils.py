@@ -68,7 +68,6 @@ class DataManager:
 class DataHandler:
 
     def __init__(self, currency_pair: CurrencyPair, freq: str) -> None:
-
         self._currency_pair = currency_pair
         self._freq = freq
 
@@ -81,28 +80,25 @@ class DataHandler:
             self.years[year] = [g for _, g in data.groupby(pd.Grouper(level=0, freq='W'))]
 
     def get_week(self, year: int, week: int) -> pd.DataFrame:
-
         assert year in self.get_available_years(), f"No week data for week {week}, {year}"
         assert week in self.get_available_weeks(year), f"No week data for week {week}, {year}"
 
-        return self.years[year][week-1]
+        return self.years[year][week - 1]
 
     def get_week_dates(self, year: int, week: int) -> Tuple[pd.Timestamp, pd.Timestamp]:
-
-        start_date = self.years[year][week-1].index[0]
-        end_date = self.years[year][week-1].index[-1]
+        start_date = self.years[year][week - 1].index[0]
+        end_date = self.years[year][week - 1].index[-1]
 
         return start_date, end_date
 
     def get_available_weeks(self, year) -> List[int]:
-        return [week+1 for week in range(len(self.years[year]))]
+        return [week + 1 for week in range(len(self.years[year]))]
 
     def get_available_years(self) -> List[int]:
         return list(self.years.keys())
 
 
 class ConfigHandler:
-
     prod_path = os.path.abspath('configs/settings.prod.ini')
     dev_path = os.path.abspath('configs/settings.dev.ini')
 
@@ -128,34 +124,33 @@ class ConfigHandler:
         return self._config['TRADER']
 
 
-class LoggerHelper:
-
+class LoggerHandler:
     filepath_log = os.path.abspath('logs/trader.log')
     logging_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-    def __init__(self, name:Optional[str]=None):
+    def __init__(self, name: Optional[str] = None):
 
         if name is None:
             self._logger = logging.getLogger(__name__)
         else:
             self._logger = logging.getLogger(name)
 
-        self._logger.setLevel(logging.INFO)
+        self._logger.setLevel(logging.DEBUG)
         self._add_null_handler()
 
     def add_stream_handler(self) -> None:
         stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter(LoggerHelper.logging_format)
+        stream_handler.setFormatter(LoggerHandler.logging_format)
         self._logger.addHandler(stream_handler)
 
     def add_path_handler(self) -> None:
-        file_handler = logging.FileHandler(filename=LoggerHelper.filepath_log)
-        file_handler.setFormatter(LoggerHelper.logging_format)
+        file_handler = logging.FileHandler(filename=LoggerHandler.filepath_log)
+        file_handler.setFormatter(LoggerHandler.logging_format)
         self._logger.addHandler(file_handler)
 
     def _add_null_handler(self) -> None:
         null_handler = logging.NullHandler()
-        null_handler.setFormatter(LoggerHelper.logging_format)
+        null_handler.setFormatter(LoggerHandler.logging_format)
         self._logger.addHandler(null_handler)
 
     @property

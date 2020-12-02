@@ -11,8 +11,6 @@ class Broker:
                  cash: float = 1000.0,
                  leverage: int = 30):
 
-        # assert len(data.columns) == 8
-
         self._data = data
 
         self.account = Account(self, cash, leverage)

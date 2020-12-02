@@ -2,7 +2,7 @@ import fxcmpy
 import schedule
 import time
 import datetime
-from utils import ConfigHandler, LoggerHelper
+from utils import ConfigHandler, LoggerHandler
 from trader.components import Order
 from trader.schedule import initialize_schedule
 from strategy.fractals import FractalStrategy
@@ -41,7 +41,7 @@ class Trader:
         self._account_id = self.connection.get_account_ids()[0]
         self.connection.subscribe_market_data(self._pair.fxcm_name, (self._process_prices,))
 
-        self._logger = logger
+        self.logger = logger
 
         self.process_timestep()
 
@@ -49,11 +49,11 @@ class Trader:
 
         self.callback_lock = True
 
-        print(f'len(self.positions): {len(self.positions)}')
-        print(f'self.num_positions: {self.num_positions}')
+        self.logger.debug(f'len(self.positions): {len(self.positions)}')
+        self.logger.debug(f'self.num_positions: {self.num_positions}')
 
-        print(f'len(self.orders): {len(self.orders)}')
-        print(f'self.num_orders: {self.num_orders}')
+        self.logger.debug(f'len(self.orders): {len(self.orders)}')
+        self.logger.debug(f'self.num_orders: {self.num_orders}')
 
         # unforeseen by strategy; could happen if position gets closed and backward offer is hanging.
         if self.num_orders == 1 and self.num_positions == 0:
@@ -77,7 +77,7 @@ class Trader:
 
     def place_starting_oco(self):
 
-        print('Placing OCO order.')
+        self.logger.debug('placing OCO order.')
 
         self.close_all_orders()
         upper_fractal, lower_fractal = self._strategy.get_fractals(self.prices)
@@ -88,7 +88,8 @@ class Trader:
             size = self._strategy.get_position_size(self.available_equity, entry_l, sl_l)
 
             if entry_s < self.latest_price < entry_l:
-                print('Fractals are between entries. Cancelling orders and adding new OCO.')
+
+                self.logger.info(f'Fractals at {upper_fractal} and {lower_fractal} are between prices')
 
                 if len(self.connection.get_order_ids()) > 0:
                     self.close_all_orders()
@@ -113,29 +114,27 @@ class Trader:
                               back_price=back_s)
 
         else:
-            print('No suitable fractals. Cancelling orders.')
+            self.logger.info('no suitable fractals found for oco order. cancelling all orders.')
             self.close_all_orders()
 
     def place_backward_order(self):
-        print('Placing backward order.')
+
+        self.logger.info('placing backward order. setting position stop loss to entry price')
 
         self.close_all_orders()
-        for position in self.positions:
-            position.sl_to_entry()
+        self.positions[0].sl_to_entry()
 
         upper_fractal, lower_fractal = self._strategy.get_fractals(self.prices)
 
         if (upper_fractal is not None) and (lower_fractal is not None):
 
             assert len(self.positions) == 1
-            position = self.positions[0].position
-            is_long = bool(position.get_isBuy())
 
             target_s, back_s, entry_s, sl_s = self._strategy.get_short_order(upper_fractal, lower_fractal)
             target_l, back_l, entry_l, sl_l = self._strategy.get_long_order(upper_fractal, lower_fractal)
             size = self._strategy.get_position_size(self.available_equity, entry_l, sl_l)
 
-            if is_long:
+            if self.positions[0].is_long:
                 entry_order = self.connection.create_entry_order(symbol=pair.fxcm_name,
                                                                  is_buy=False,
                                                                  limit=target_s,
@@ -167,7 +166,8 @@ class Trader:
                       order=entry_order,
                       back_price=back_l)
         else:
-            print('No suitable fractals for backward offer. Cancelling backward order.')
+            self.logger.info('no suitable fractals found for backward order. cancelling all orders.')
+            self.close_all_orders()
 
     def _process_prices(self, _, data):
 
@@ -266,14 +266,14 @@ class Trader:
 
 if __name__ == '__main__':
 
-    logger_helper = LoggerHelper()
+    config = ConfigHandler()
+    trader_section = config.trader_settings
+
+    logger_helper = LoggerHandler()
     logger_helper.add_stream_handler()
     logger_helper.add_path_handler()
 
     logger = logger_helper.logger
-
-    config = ConfigHandler()
-    trader_section = config.trader_settings
 
     currency = trader_section['currency']
     frequency = trader_section['frequency']

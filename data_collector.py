@@ -27,7 +27,7 @@ def get_ticker_data(con, ticker: str, freq: str, first_date: datetime, last_date
 
 if __name__ == '__main__':
 
-    logger_helper = utils.LoggerHelper()
+    logger_helper = utils.LoggerHandler()
     logger_helper.add_stream_handler()
     logger = logger_helper.logger
 

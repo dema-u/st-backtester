@@ -18,10 +18,13 @@ class Order:
         position = self.order.get_associated_trade()
 
         if position is not None:
-            print('Adding a position to the positions list.')
+            self.trader.logger.info('order became a position, adding a new position and removing order from list.')
+            self.trader.orders.remove(self)
             Position(trader=self.trader,
                      position=position,
                      back_price=self.back_price)
+
+            self.trader.orders.remove(self)
 
         elif self.status == 'Canceled':
             print('Order cancelled, removing from orders list.')

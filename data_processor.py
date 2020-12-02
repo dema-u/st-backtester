@@ -1,7 +1,4 @@
-import os
-import logging
 import utils
-import configparser
 import pandas as pd
 from structs import CurrencyPair
 
@@ -71,13 +68,9 @@ def process_data(data: pd.DataFrame, ticker: CurrencyPair, mode: str) -> pd.Data
 
 if __name__ == '__main__':
 
-    abspath_log = os.path.abspath('logs/data.log')
-    logger = logging.getLogger(__name__)
-
-    file_handler = logging.FileHandler(filename=abspath_log)
-    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-    logger.addHandler(file_handler)
-    logger.setLevel(logging.INFO)
+    logger_helper = utils.LoggerHandler()
+    logger_helper.add_stream_handler()
+    logger = logger_helper.logger
 
     config = utils.ConfigHandler()
     data_section = config.data_settings
@@ -85,13 +78,13 @@ if __name__ == '__main__':
     all_tickers = [CurrencyPair(ticker) for ticker in data_section['tickers'].split(',')]
     all_freqs = data_section['frequency'].split(',')
     mode = data_section['processing']
-    logger.info(f"Config file read")
+    logger.info(f"config file read")
 
     for ticker in tqdm(all_tickers):
         for freq in all_freqs:
             raw_data = utils.DataManager.read_price_data(ticker.name, freq, raw=True)
             processed_data = process_data(raw_data, ticker, mode)
             utils.DataManager.store_price_data(processed_data, ticker.name, freq, raw=False)
-            logger.info(f"Ticker {ticker.name} ({freq}) downloaded, processed and stored")
+            logger.info(f"ticker {ticker.name} ({freq}) downloaded, processed and stored")
 
     logger.info(f"Data processing finished")
