@@ -18,12 +18,13 @@ class Order:
         position = self.order.get_associated_trade()
 
         if position is not None:
-
+            print('Adding a position to the positions list.')
             Position(trader=self.trader,
                      position=position,
                      back_price=self.back_price)
 
         elif self.status == 'Canceled':
+            print('Order cancelled, removing from orders list.')
             self.trader.orders.remove(self)
 
     @property
@@ -47,7 +48,7 @@ class Position:
 
     def update(self, latest_price):
 
-        if self.position not in self.trader._connection.get_open_trade_ids():
+        if self.position not in self.trader.connection.get_open_trade_ids():
             self.trader.positions.remove(self)
 
         if self.is_long and latest_price > self.back_price and self._is_back == False:
@@ -61,7 +62,7 @@ class Position:
         trade_id = self.position.get_tradeId()
         open_price = self.position.get_open()
 
-        self.trader._connection.change_trade_stop_limit(trade_id, is_stop=True, rate=open_price, is_in_pips=False)
+        self.trader.connection.change_trade_stop_limit(trade_id, is_stop=True, rate=open_price, is_in_pips=False)
 
     @property
     def is_long(self):
@@ -78,4 +79,4 @@ class Position:
     @sl.setter
     def sl(self, new_sl):
         trade_id = self.position.get_tradeId()
-        self.trader._connection.change_trade_stop_limit(trade_id, is_stop=True, rate=new_sl, is_in_pips=False)
+        self.trader.connection.change_trade_stop_limit(trade_id, is_stop=True, rate=new_sl, is_in_pips=False)

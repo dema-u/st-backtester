@@ -1,7 +1,7 @@
 import pandas as pd
 import multiprocessing
 from timeit import default_timer
-from backtester import Broker
+from backtester.backtester import Broker
 from strategy.fractals import FractalStrategy
 from structs import CurrencyPair, Pips
 from utils import DataHandler
@@ -25,9 +25,6 @@ class StrategyRunner:
         position_lock = False
 
         while not self.broker.backtest_done:
-
-            # print(
-            #    f"{self.broker.current_time}: {round(self.broker.equity, 2)}$. Positions {len(self.broker.positions)}, Orders: {len(self.broker.orders)}")
 
             historical_prices = self.broker.get_historical_prices(history_len=24)
 

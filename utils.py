@@ -1,8 +1,9 @@
 import os
 import pandas as pd
 import configparser
+import logging
 from structs import CurrencyPair
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 
 class DataManager:
@@ -125,3 +126,38 @@ class ConfigHandler:
     @property
     def trader_settings(self):
         return self._config['TRADER']
+
+
+class LoggerHelper:
+
+    filepath_log = os.path.abspath('logs/trader.log')
+    logging_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    def __init__(self, name:Optional[str]=None):
+
+        if name is None:
+            self._logger = logging.getLogger(__name__)
+        else:
+            self._logger = logging.getLogger(name)
+
+        self._logger.setLevel(logging.INFO)
+        self._add_null_handler()
+
+    def add_stream_handler(self) -> None:
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(LoggerHelper.logging_format)
+        self._logger.addHandler(stream_handler)
+
+    def add_path_handler(self) -> None:
+        file_handler = logging.FileHandler(filename=LoggerHelper.filepath_log)
+        file_handler.setFormatter(LoggerHelper.logging_format)
+        self._logger.addHandler(file_handler)
+
+    def _add_null_handler(self) -> None:
+        null_handler = logging.NullHandler()
+        null_handler.setFormatter(LoggerHelper.logging_format)
+        self._logger.addHandler(null_handler)
+
+    @property
+    def logger(self):
+        return self._logger

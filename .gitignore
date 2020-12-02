@@ -1,4 +1,6 @@
 # My Specifics
+data/raw
+data/processed
 data
 .idea
 notebooks

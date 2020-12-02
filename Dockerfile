@@ -1,7 +1,5 @@
 FROM python:3.8-slim-buster
 
-
-
 RUN mkdir configs/
 RUN mkdir trader/
 RUN mkdir strategy/

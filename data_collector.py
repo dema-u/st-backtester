@@ -27,13 +27,9 @@ def get_ticker_data(con, ticker: str, freq: str, first_date: datetime, last_date
 
 if __name__ == '__main__':
 
-    abspath_log = os.path.abspath('logs/data.log')
-    logger = logging.getLogger(__name__)
-
-    file_handler = logging.FileHandler(filename=abspath_log)
-    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
-    logger.addHandler(file_handler)
-    logger.setLevel(logging.INFO)
+    logger_helper = utils.LoggerHelper()
+    logger_helper.add_stream_handler()
+    logger = logger_helper.logger
 
     config = utils.ConfigHandler()
     fxcm_section = config.fxcm_settings
@@ -44,13 +40,11 @@ if __name__ == '__main__':
     log_level = fxcm_section['log_level']
 
     api_con = fxcmpy.fxcmpy(access_token=access_token, log_file=log_file, log_level=log_level)
-    logger.info(f"FXCM API connection established")
 
     all_tickers = [CurrencyPair(ticker) for ticker in data_section['tickers'].split(',')]
     all_freqs = data_section['frequency'].split(',')
     first_date = datetime.strptime(data_section['first_date'], '%d/%m/%Y')
     last_date = datetime.strptime(data_section['last_date'], '%d/%m/%Y')
-    logger.info(f"Config file read")
 
     for ticker in tqdm(all_tickers):
         for freq in all_freqs:

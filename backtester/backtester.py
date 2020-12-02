@@ -1,7 +1,7 @@
 import pandas as pd
 from typing import Optional
-from components.orders import EntryOrder, MarketOrder
-from components.account import Account
+from backtester.orders import EntryOrder, MarketOrder
+from backtester.account import Account
 
 
 class Broker:

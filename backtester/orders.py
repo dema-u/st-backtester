@@ -1,7 +1,7 @@
 import uuid
 import abc
 from typing import Optional
-from components.positions import Position
+from backtester.positions import Position
 
 
 class Order(metaclass=abc.ABCMeta):
