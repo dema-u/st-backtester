@@ -60,16 +60,3 @@ class Pips:
 
     def __repr__(self):
         return f"Pips({self.pips})"
-
-
-class MilliLots:
-
-    LOT = 1000
-    MIN_LOT = 1
-
-    def __init__(self, lots: float):
-        self.lots = lots
-
-    @property
-    def units(self):
-        return self.lots * MilliLots.LOT

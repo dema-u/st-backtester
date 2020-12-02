@@ -9,7 +9,7 @@ class Logger:
 
     def __init__(self):
 
-        self._logger = logging.getLogger('trader')
+        self._logger = logging.getLogger(__name__)
         self._logger.setLevel(logging.INFO)
 
         self._add_null_handler()

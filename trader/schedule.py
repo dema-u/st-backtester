@@ -1,6 +1,5 @@
 import datetime
 import schedule
-from trader.trader import Trader
 from typing import List
 
 
@@ -75,7 +74,7 @@ class ScheduleHelper:
         return all_times
 
 
-def initialize_schedule(_trader: Trader) -> None:
+def initialize_schedule(_trader) -> None:
 
     now = datetime.datetime.utcnow()
 

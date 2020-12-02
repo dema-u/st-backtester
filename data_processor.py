@@ -71,19 +71,16 @@ def process_data(data: pd.DataFrame, ticker: CurrencyPair, mode: str) -> pd.Data
 
 if __name__ == '__main__':
 
-    abspath_data = os.path.abspath('configs/data.ini')
     abspath_log = os.path.abspath('logs/data.log')
-    config = configparser.ConfigParser()
-    config.read(abspath_data)
-
-    logger = logging.getLogger("DataProcessing")
+    logger = logging.getLogger(__name__)
 
     file_handler = logging.FileHandler(filename=abspath_log)
     file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
     logger.addHandler(file_handler)
     logger.setLevel(logging.INFO)
 
-    data_section = config['DATA']
+    config = utils.ConfigHandler()
+    data_section = config.data_settings
 
     all_tickers = [CurrencyPair(ticker) for ticker in data_section['tickers'].split(',')]
     all_freqs = data_section['frequency'].split(',')

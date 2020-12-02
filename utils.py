@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import configparser
 from structs import CurrencyPair
 from typing import Tuple, List
 
@@ -97,3 +98,30 @@ class DataHandler:
 
     def get_available_years(self) -> List[int]:
         return list(self.years.keys())
+
+
+class ConfigHandler:
+
+    prod_path = os.path.abspath('configs/settings.prod.ini')
+    dev_path = os.path.abspath('configs/settings.dev.ini')
+
+    def __init__(self):
+
+        self._config = configparser.ConfigParser()
+
+        if os.path.exists(ConfigHandler.dev_path):
+            self._config.read(self.dev_path)
+        else:
+            self._config.read(self.prod_path)
+
+    @property
+    def fxcm_settings(self):
+        return self._config['FXCM']
+
+    @property
+    def data_settings(self):
+        return self._config['DATA']
+
+    @property
+    def trader_settings(self):
+        return self._config['TRADER']
