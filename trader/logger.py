@@ -29,7 +29,6 @@ class Logger:
         null_handler.setFormatter(Logger.logging_format)
         self._logger.addHandler(null_handler)
 
-
     @property
     def logger(self):
         return self._logger

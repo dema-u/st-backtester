@@ -64,7 +64,7 @@ class Trader:
             self.place_starting_oco()
 
         elif self.num_orders == 0 and self.num_positions == 1:  # position is in place, but is it back yet?
-            assert len(self.num_positions) == len(self.positions) == 1
+            assert self.num_positions == len(self.positions) == 1
             if self.positions[0].is_back:
                 self.place_backward_order()
 
@@ -115,7 +115,6 @@ class Trader:
             self.close_all_orders()
 
     def place_backward_order(self):
-        # only called when the position is already back
         print('Placing backward order.')
 
         self.close_all_orders()
@@ -176,7 +175,7 @@ class Trader:
             mid_price = (dataframe.iloc[-1]['Bid'] + dataframe.iloc[-1]['Ask']) / 2
 
             for order in list(self.orders):
-                order.update()
+                order.update(mid_price)
 
             for position in list(self.positions):
                 position.update(mid_price)
@@ -191,14 +190,6 @@ class Trader:
 
         self._connection.change_trade_stop_limit(self, is_stop=True, rate=entry_price, is_in_pips=False)
 
-    def _set_back_trades(self, back_price_long, back_price_short):
-        self._longback_order = back_price_long
-        self._shortback_order = back_price_short
-
-    def _reset_back_trades(self):
-        self._longback_order = None
-        self._shortback_order = None
-
     def close_all_orders(self):
         order_ids = self._connection.get_order_ids()
 
@@ -206,16 +197,12 @@ class Trader:
             order = self._connection.get_order(order_id)
             order.delete()
 
-        self._reset_back_trades()
-
     def close_all_positions(self):
         position_ids = self._connection.get_open_trade_ids()
 
         for position_id in position_ids:
             position = self._connection.get_open_position(position_id)
             position.close()
-
-        self._reset_back_trades()
 
     def close_connection(self):
         self._connection.close()
@@ -257,11 +244,9 @@ class Trader:
 
     @staticmethod
     def _initialize_connection():
-        abspath_api = os.path.abspath('configs/settings.dev.ini')
-        config = configparser.ConfigParser()
-        config.read(abspath_api)
 
-        fxcm_section = config['FXCM']
+        config = ConfigHandler()
+        fxcm_section = config.fxcm_settings
 
         access_token = fxcm_section['access_token']
         log_file = fxcm_section['log_file']

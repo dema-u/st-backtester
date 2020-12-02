@@ -15,10 +15,12 @@ class Order:
 
     def update(self, latest_price):
 
-        if self.status == 'Executing':
+        position = self.order.get_associated_trade()
+
+        if position is not None:
 
             Position(trader=self.trader,
-                     position=self.order.get_associated_trade(),
+                     position=position,
                      back_price=self.back_price)
 
         elif self.status == 'Canceled':
