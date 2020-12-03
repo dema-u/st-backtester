@@ -173,7 +173,7 @@ if __name__ == '__main__':
 
     pair = CurrencyPair('GBPUSD')
     jpy_pair: bool = pair.jpy_pair
-    freq = 'm1'
+    freq = 'm5'
     year = 2020
 
     cash = 1000.0
@@ -208,22 +208,22 @@ if __name__ == '__main__':
     week = 5
     run_backtest(year, week, strategy, brokers[week])
 
-    # num_cores = multiprocessing.cpu_count() - 2
-    # result_list = Parallel(n_jobs=num_cores)(delayed(run_backtest)(_year=year,
-    #                                                                _week=week,
-    #                                                                _strategy=strategy,
-    #                                                                _broker=broker) for week, broker in tqdm(brokers.items()))
-    #
-    # results = {week: equity for week, equity, _ in result_list}
-    # failed_weeks = [week for week, _, failed in result_list if failed]
-    #
-    # backtest_end_time = default_timer()
-    # results_df = pd.DataFrame(results.items(), columns=['Week', 'Equity']).set_index('Week')
-    #
-    # print()
-    # print('___BACKTEST RESULTS___')
-    # print(f'Pair: {pair.fxcm_name}. Frequency: {freq}')
-    # print(results_df)
-    # print(f'Failed weeks: {failed_weeks}')
-    # print(results_df.describe())
-    # print(f'Backtest time taken {round(backtest_end_time - backtest_start_time, 2)}s')
+    num_cores = multiprocessing.cpu_count() - 2
+    result_list = Parallel(n_jobs=num_cores)(delayed(run_backtest)(_year=year,
+                                                                   _week=week,
+                                                                   _strategy=strategy,
+                                                                   _broker=broker) for week, broker in tqdm(brokers.items()))
+
+    results = {week: equity for week, equity, _ in result_list}
+    failed_weeks = [week for week, _, failed in result_list if failed]
+
+    backtest_end_time = default_timer()
+    results_df = pd.DataFrame(results.items(), columns=['Week', 'Equity']).set_index('Week')
+
+    print()
+    print('___BACKTEST RESULTS___')
+    print(f'Pair: {pair.fxcm_name}. Frequency: {freq}')
+    print(results_df)
+    print(f'Failed weeks: {failed_weeks}')
+    print(results_df.describe())
+    print(f'Backtest time taken {round(backtest_end_time - backtest_start_time, 2)}s')

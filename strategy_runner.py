@@ -90,7 +90,9 @@ class Trader:
         self.logger.debug('placing OCO order.')
         self.close_all_orders()
 
-        upper_fractal, lower_fractal = self._strategy.get_fractals(self.prices)
+        historical_price = self.prices
+        upper_fractal, lower_fractal = self._strategy.get_fractals(historical_price)
+        upper_date, lower_date = self._strategy.get_fractals(historical_price, dates=True)
 
         if (upper_fractal is not None) and (lower_fractal is not None):
             target_l, back_l, entry_l, sl_l = self._strategy.get_long_order(upper_fractal, lower_fractal)
@@ -100,6 +102,7 @@ class Trader:
             if entry_s < self.latest_price < entry_l:
 
                 self.logger.info(f'fractals at {upper_fractal} and {lower_fractal} are between prices, placing oco.')
+                self.logger.info(f'upper fractal date: {upper_date}, lower fractal date: {lower_date}')
 
                 if len(self.connection.get_order_ids()) > 0:
                     self.close_all_orders()
@@ -133,11 +136,14 @@ class Trader:
         self.close_all_orders()
         self.position.sl_to_entry()
 
+        historical_price = self.prices
         upper_fractal, lower_fractal = self._strategy.get_fractals(self.prices)
+        upper_date, lower_date = self._strategy.get_fractals(historical_price, dates=True)
 
         if (upper_fractal is not None) and (lower_fractal is not None):
 
             self.logger.info(f'fractals at {upper_fractal} and {lower_fractal} are between prices, placing backward.')
+            self.logger.info(f'upper fractal date: {upper_date}, lower fractal date: {lower_date}')
 
             target_s, back_s, entry_s, sl_s = self._strategy.get_short_order(upper_fractal, lower_fractal)
             target_l, back_l, entry_l, sl_l = self._strategy.get_long_order(upper_fractal, lower_fractal)

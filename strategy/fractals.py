@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from structs import Pips
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Any
 
 
 class FractalStrategy:
@@ -76,7 +76,7 @@ class FractalStrategy:
 
         return int(position_size // 1000)
 
-    def get_fractals(self, historical_price: pd.DataFrame) -> Optional[Tuple[float, float]]:
+    def get_fractals(self, historical_price: pd.DataFrame, dates=False) -> Tuple[Optional[Any], Optional[Any]]:
 
         latest_price = ((historical_price['BidClose'] + historical_price['AskClose']) / 2).iloc[-1]
 
@@ -102,11 +102,17 @@ class FractalStrategy:
         upper_fractal = all_upper.iloc[-1]
         lower_fractal = all_lower.iloc[-1]
 
+        upper_fractal_date = all_upper.index[-1]
+        lower_fractal_date = all_lower.index[-1]
+
         upper_entry = upper_fractal + self.break_level.price
         lower_entry = lower_fractal - self.break_level.price
 
         if upper_entry > latest_price > lower_entry and self.valid_corridor(upper_fractal, lower_fractal):
-            return upper_fractal, lower_fractal
+            if dates:
+                return upper_fractal_date, lower_fractal_date
+            else:
+                return upper_fractal, lower_fractal
         else:
             return None, None
 
@@ -133,5 +139,3 @@ class FractalStrategy:
     @property
     def min_width(self):
         return self._min_width
-
-    self.broker.current_spread

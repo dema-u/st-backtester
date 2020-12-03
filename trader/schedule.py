@@ -6,29 +6,48 @@ from typing import List
 class ScheduleHelper:
 
     day_map = {'Sunday': 1, 'Monday': 2, 'Tuesday': 3, 'Wednesday': 4, 'Thursday': 5, 'Friday': 6, 'Saturday': 7}
+    freq_map = {'m1': 1, 'm5': 5}
 
     def __init__(self, time_now, frequency):
+
+        if frequency not in list(self.freq_map.keys()):
+            raise AttributeError(f'Frequency {frequency} not supported.')
 
         self._time_now = time_now
         self._frequency = frequency
 
     def get_schedule(self, day: str):
         if day == 'Friday':
-            end_time = '20:55'
+            end_time = '19:55'
         else:
             end_time = '23:55'
 
         if self.week_number_now < ScheduleHelper.day_map[day]:
             return self.get_time_intervals('00:00', end_time)
+
         elif self.week_number_now == ScheduleHelper.day_map[day]:
-            next_time = self._time_now - datetime.timedelta(minutes=(self._time_now.minute % 5),
+            next_time = self._time_now - datetime.timedelta(minutes=(self._time_now.minute % self.freq_map[self._frequency]),
                                                             seconds=self._time_now.second,
                                                             microseconds=self._time_now.microsecond)
-            next_time += datetime.timedelta(minutes=5)
+            next_time += datetime.timedelta(minutes=self.freq_map[self._frequency])
             return self.get_time_intervals(next_time.strftime('%H:%M'), end_time)
 
         else:
             return []
+
+    def get_time_intervals(self, start: str, end: str) -> List[str]:
+        all_times = []
+
+        start = datetime.datetime.strptime(start, "%H:%M")
+        end = datetime.datetime.strptime(end, "%H:%M")
+
+        t = start
+
+        while t <= end:
+            all_times.append(t.strftime("%H:%M"))
+            t += datetime.timedelta(minutes=self.freq_map[self._frequency])
+
+        return all_times
 
     @property
     def monday(self) -> List[str]:
@@ -58,27 +77,12 @@ class ScheduleHelper:
     def last_run_time(self) -> datetime:
         raise NotImplementedError
 
-    @staticmethod
-    def get_time_intervals(start: str, end: str) -> List[str]:
-        all_times = []
 
-        start = datetime.datetime.strptime(start, "%H:%M")
-        end = datetime.datetime.strptime(end, "%H:%M")
-
-        t = start
-
-        while t <= end:
-            all_times.append(t.strftime("%H:%M"))
-            t += datetime.timedelta(minutes=5)
-
-        return all_times
-
-
-def initialize_schedule(_trader) -> None:
+def initialize_schedule(_trader, frequency) -> None:
 
     now = datetime.datetime.utcnow()
 
-    helper = ScheduleHelper(time_now=now, frequency='m5')
+    helper = ScheduleHelper(time_now=now, frequency=frequency)
 
     for monday_time in helper.monday:
         schedule.every().monday.at(monday_time).do(_trader.process_timestep)
