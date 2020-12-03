@@ -26,7 +26,7 @@ class Account:
 
     @property
     def used_margin(self) -> float:
-        total_amount_positions = sum((position.size for position in self.broker.positions)) * 1000
+        total_amount_positions = sum((position.size for position in self.broker.fxcm_position)) * 1000
         return total_amount_positions / self.leverage
 
     @property

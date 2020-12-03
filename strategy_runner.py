@@ -2,6 +2,8 @@ import fxcmpy
 import schedule
 import time
 import datetime
+import threading
+import gc
 from utils import ConfigHandler, LoggerHandler
 from trader.components import Order
 from trader.schedule import initialize_schedule
@@ -20,7 +22,7 @@ class Trader:
                  currency_pair: CurrencyPair,
                  freq: str,
                  strategy: FractalStrategy,
-                 logger=None):
+                 logger):
 
         self._pair = currency_pair
         self._freq = freq
@@ -32,7 +34,7 @@ class Trader:
         self.close_all_orders()
 
         self.orders = []
-        self.positions = []
+        self.position = None
         self.callback_lock = False
 
         self.close_all_orders()
@@ -47,39 +49,47 @@ class Trader:
 
     def process_timestep(self):
 
-        self.callback_lock = True
+        lock = threading.Lock()
+        lock.acquire()
 
-        self.logger.debug(f'len(self.positions): {len(self.positions)}')
+        for order in list(self.orders):
+            order.update(self.latest_price)
+
+        if self.position is not None:
+            self.position.update(self.latest_price)
+
+        self.logger.debug(f'self.position is None: {self.position is None}')
         self.logger.debug(f'self.num_positions: {self.num_positions}')
 
         self.logger.debug(f'len(self.orders): {len(self.orders)}')
         self.logger.debug(f'self.num_orders: {self.num_orders}')
 
-        # unforeseen by strategy; could happen if position gets closed and backward offer is hanging.
         if self.num_orders == 1 and self.num_positions == 0:
+            self.logger.warn(f'loose order {self.connection.get_order_ids()} found, cancelling')
             self.close_all_orders()
 
-        # unforeseen by strategy; could happen if entry opens before take profit it hit.
         if self.num_positions > 1:
+            self.logger.warn(f'multiple positions {self.connection.get_open_trade_ids()} found, cancelling')
             self.close_all_positions()
 
-        if self.num_positions == 0:  # no positions currently.
+        if self.num_positions == 0:
             self.place_starting_oco()
 
-        elif self.num_orders == 0 and self.num_positions == 1:  # position is in place, but is it back yet?
-            if self.positions[0].is_back:
+        elif self.num_orders == 0 and self.num_positions == 1:
+            self.logger.info(f'position {self.positon.id} in place, reached turn price: {self.position.is_back}')
+            if self.position.is_back:
                 self.place_backward_order()
 
-        elif self.num_orders == 1 and self.num_positions == 1:  # we know position is back here.
+        elif self.num_orders == 1 and self.num_positions == 1:
             self.place_backward_order()
 
-        self.callback_lock = False
+        lock.release()
 
     def place_starting_oco(self):
 
         self.logger.debug('placing OCO order.')
-
         self.close_all_orders()
+
         upper_fractal, lower_fractal = self._strategy.get_fractals(self.prices)
 
         if (upper_fractal is not None) and (lower_fractal is not None):
@@ -89,7 +99,7 @@ class Trader:
 
             if entry_s < self.latest_price < entry_l:
 
-                self.logger.info(f'Fractals at {upper_fractal} and {lower_fractal} are between prices')
+                self.logger.info(f'fractals at {upper_fractal} and {lower_fractal} are between prices, placing oco.')
 
                 if len(self.connection.get_order_ids()) > 0:
                     self.close_all_orders()
@@ -114,27 +124,26 @@ class Trader:
                               back_price=back_s)
 
         else:
-            self.logger.info('no suitable fractals found for oco order. cancelling all orders.')
-            self.close_all_orders()
+            self.logger.info('no suitable fractals found for oco order. cancelled all orders.')
 
     def place_backward_order(self):
 
         self.logger.info('placing backward order. setting position stop loss to entry price')
 
         self.close_all_orders()
-        self.positions[0].sl_to_entry()
+        self.position.sl_to_entry()
 
         upper_fractal, lower_fractal = self._strategy.get_fractals(self.prices)
 
         if (upper_fractal is not None) and (lower_fractal is not None):
 
-            assert len(self.positions) == 1
+            self.logger.info(f'fractals at {upper_fractal} and {lower_fractal} are between prices, placing backward.')
 
             target_s, back_s, entry_s, sl_s = self._strategy.get_short_order(upper_fractal, lower_fractal)
             target_l, back_l, entry_l, sl_l = self._strategy.get_long_order(upper_fractal, lower_fractal)
             size = self._strategy.get_position_size(self.available_equity, entry_l, sl_l)
 
-            if self.positions[0].is_long:
+            if self.position.is_long:
                 entry_order = self.connection.create_entry_order(symbol=pair.fxcm_name,
                                                                  is_buy=False,
                                                                  limit=target_s,
@@ -144,7 +153,7 @@ class Trader:
                                                                  time_in_force='GTC',
                                                                  is_in_pips=False)
 
-                self.positions[0].sl = entry_s + Pips(1, jpy_pair=self._pair.jpy_pair).price
+                self.position.sl = entry_s + Pips(0.5, jpy_pair=self._pair.jpy_pair).price
 
                 Order(trader=self,
                       order=entry_order,
@@ -160,36 +169,23 @@ class Trader:
                                                                  time_in_force='GTC',
                                                                  is_in_pips=False)
 
-                self.positions[0].sl = entry_l - Pips(1, jpy_pair=self._pair.jpy_pair).price
+                self.position.sl = entry_l - Pips(0.5, jpy_pair=self._pair.jpy_pair).price
 
                 Order(trader=self,
                       order=entry_order,
                       back_price=back_l)
         else:
-            self.logger.info('no suitable fractals found for backward order. cancelling all orders.')
-            self.close_all_orders()
+            self.logger.info('no suitable fractals found for backward order. cancelled all orders.')
 
     def _process_prices(self, _, data):
 
-        if not self.callback_lock:
+        mid_price = (data.iloc[-1]['Bid'] + data.iloc[-1]['Ask']) / 2
 
-            mid_price = (data.iloc[-1]['Bid'] + data.iloc[-1]['Ask']) / 2
+        for order in list(self.orders):
+            order.update(mid_price)
 
-            for order in list(self.orders):
-                order.update(mid_price)
-
-            for position in list(self.positions):
-                position.update(mid_price)
-
-    def _adjust_stop_loss(self):
-        position_ids = self.connection.get_open_trade_ids()
-        trade_id = position_ids[0]
-        assert len(position_ids) == 1
-
-        position = self.connection.get_open_position(trade_id)
-        entry_price = float(position.get_open())
-
-        self.connection.change_trade_stop_limit(self, is_stop=True, rate=entry_price, is_in_pips=False)
+        if self.position is not None:
+            self.position.update(mid_price)
 
     def close_all_orders(self):
 
@@ -202,7 +198,7 @@ class Trader:
 
     def close_all_positions(self):
 
-        self.positions = []
+        self.position = None
         position_ids = self.connection.get_open_trade_ids()
 
         for position_id in position_ids:
@@ -259,8 +255,6 @@ class Trader:
 
         connection = fxcmpy.fxcmpy(access_token=access_token, log_file=log_file, log_level=log_level)
 
-        connection.close_all()
-
         return connection
 
 
@@ -269,7 +263,7 @@ if __name__ == '__main__':
     config = ConfigHandler()
     trader_section = config.trader_settings
 
-    logger_helper = LoggerHandler()
+    logger_helper = LoggerHandler('trader')
     logger_helper.add_stream_handler()
     logger_helper.add_path_handler()
 
@@ -303,8 +297,12 @@ if __name__ == '__main__':
                     logger=logger)
 
     initialize_schedule(trader)
-    logger.info('strategy, trader and schedule have been initialized')
 
     while True:
-        schedule.run_pending()
-        time.sleep(1)
+        try:
+            schedule.run_pending()
+        except:
+            logger.exception('message')
+        finally:
+            time.sleep(1)
+            gc.collect()

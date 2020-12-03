@@ -26,51 +26,58 @@ class StrategyRunner:
 
         while not self.broker.backtest_done:
 
-            historical_prices = self.broker.get_historical_prices(history_len=24)
+            historical_prices = self.broker.get_historical_prices(history_len=120)
 
-            if len(self.broker.open_positions) == 0 and len(self.broker.open_orders) == 0:
-                position_lock = False
-                upper_fractal, lower_fractal = self.corridor.get_fractals(historical_prices)
-                if upper_fractal is not None and lower_fractal is not None:
-                    self._place_starting_orders(upper_fractal, lower_fractal)
+            if 7 < self.broker.current_time.hour < 18:
 
-            elif len(self.broker.open_positions) == 0 and len(self.broker.open_orders) == 2:
-                position_lock = False
-                upper_fractal, lower_fractal = self.corridor.get_fractals(historical_prices)
-                if upper_fractal is not None and lower_fractal is not None:
-                    self._place_starting_orders(upper_fractal, lower_fractal)
+                current_prices = self.broker.current_prices
 
-            elif len(self.broker.open_positions) == 1 and len(self.broker.open_orders) == 1 and (not position_lock):
-                position_lock = True
-                for order in self.broker.open_orders:
-                    order.cancel()
+                print(self.broker.equity, len(self.broker.orders), len(self.broker.positions), self.broker.current_time)
+                print('midprice: ', (current_prices['BidClose'] + current_prices['AskClose'])/2)
 
-            elif len(self.broker.open_positions) == 1 and len(self.broker.open_orders) == 1 and position_lock:
-                upper_fractal, lower_fractal = self.corridor.get_fractals(historical_prices)
-                if upper_fractal is not None and lower_fractal is not None:
-                    self._place_opposite_order(upper_fractal, lower_fractal)
-
-            elif len(self.broker.open_positions) == 1 and len(self.broker.open_orders) == 0:
-                if self.broker.positions[0].isback:
-
+                if len(self.broker.open_positions) == 0 and len(self.broker.open_orders) == 0:
+                    position_lock = False
                     upper_fractal, lower_fractal = self.corridor.get_fractals(historical_prices)
-                    position = self.broker.positions[0]
+                    if upper_fractal is not None and lower_fractal is not None:
+                        self._place_starting_orders(upper_fractal, lower_fractal)
 
-                    position.sl = position.entry_price
+                elif len(self.broker.open_positions) == 0 and len(self.broker.open_orders) == 2:
+                    position_lock = False
+                    upper_fractal, lower_fractal = self.corridor.get_fractals(historical_prices)
+                    if upper_fractal is not None and lower_fractal is not None:
+                        self._place_starting_orders(upper_fractal, lower_fractal)
 
+                elif len(self.broker.open_positions) == 1 and len(self.broker.open_orders) == 1 and (not position_lock):
+                    position_lock = True
+                    for order in self.broker.open_orders:
+                        order.cancel()
+
+                elif len(self.broker.open_positions) == 1 and len(self.broker.open_orders) == 1 and position_lock:
+                    upper_fractal, lower_fractal = self.corridor.get_fractals(historical_prices)
                     if upper_fractal is not None and lower_fractal is not None:
                         self._place_opposite_order(upper_fractal, lower_fractal)
 
-            elif len(self.broker.orders) == 1 and len(self.broker.positions) == 0:
-                for order in self.broker.open_orders:
-                    order.cancel()
+                elif len(self.broker.open_positions) == 1 and len(self.broker.open_orders) == 0:
+                    if self.broker.positions[0].isback:
 
-            elif len(self.broker.positions) == 2:
-                for position in self.broker.open_positions:
-                    position.close()
+                        upper_fractal, lower_fractal = self.corridor.get_fractals(historical_prices)
+                        position = self.broker.positions[0]
 
-            else:
-                print(f"Case not covered. Orders: {len(self.broker.orders)}, Positions: {len(self.broker.positions)}")
+                        position.sl = position.entry_price
+
+                        if upper_fractal is not None and lower_fractal is not None:
+                            self._place_opposite_order(upper_fractal, lower_fractal)
+
+                elif len(self.broker.orders) == 1 and len(self.broker.positions) == 0:
+                    for order in self.broker.open_orders:
+                        order.cancel()
+
+                elif len(self.broker.positions) == 2:
+                    for position in self.broker.open_positions:
+                        position.close()
+
+                else:
+                    print(f"Case not covered. Orders: {len(self.broker.orders)}, Positions: {len(self.broker.positions)}")
 
             self.broker.next()
 
@@ -91,7 +98,7 @@ class StrategyRunner:
         for order in self.broker.open_orders:
             order.cancel()
 
-        # print(f'Placing backward offer! Size: {size}, position size: {position.size}')
+        print(f'Placing backward offer! Size: {size}, position size: {position.size}. Long: {not position.is_long}')
 
         self.broker.open_entry_order(is_long=order_long,
                                      limit=None,
@@ -102,7 +109,7 @@ class StrategyRunner:
                                      tag=back)
 
     def _place_starting_orders(self, upper_fractal, lower_fractal):
-        # print("Placing starting order!")
+        print("Placing starting order!")
         target_l, back_l, entry_l, sl_l = self.corridor.get_long_order(upper_fractal, lower_fractal)
         target_s, back_s, entry_s, sl_s = self.corridor.get_short_order(upper_fractal, lower_fractal)
 
@@ -151,6 +158,7 @@ def run_backtest(_year, _week, _strategy, _broker):
 
     _runner = StrategyRunner(broker=_broker,
                              corridor=_strategy)
+
     try:
         _runner.run()
     except:
@@ -165,7 +173,7 @@ if __name__ == '__main__':
 
     pair = CurrencyPair('GBPUSD')
     jpy_pair: bool = pair.jpy_pair
-    freq = 'm5'
+    freq = 'm1'
     year = 2020
 
     cash = 1000.0
@@ -177,12 +185,12 @@ if __name__ == '__main__':
     sl_extension = Pips(1, jpy_pair)
     max_width = Pips(12, jpy_pair)
     min_width = Pips(4, jpy_pair)
-    risk = 0.0150
+    risk = 0.0100
 
     results = dict()
     failed_weeks = list()
 
-    data_handler = DataHandler(currency_pair=pair, freq='m5')
+    data_handler = DataHandler(currency_pair=pair, freq=freq)
     all_weeks = data_handler.get_available_weeks(year=year)
 
     backtest_start_time = default_timer()
@@ -197,21 +205,25 @@ if __name__ == '__main__':
 
     brokers = {week: Broker(data_handler.get_week(year, week), cash, leverage) for week in all_weeks}
 
-    num_cores = multiprocessing.cpu_count() - 2
-    result_list = Parallel(n_jobs=num_cores)(delayed(run_backtest)(_year=year,
-                                                                   _week=week,
-                                                                   _strategy=strategy,
-                                                                   _broker=broker) for week, broker in tqdm(brokers.items()))
+    week = 5
+    run_backtest(year, week, strategy, brokers[week])
 
-    results = {week: equity for week, equity, _ in result_list}
-    failed_weeks = [week for week, _, failed in result_list if failed]
-
-    backtest_end_time = default_timer()
-    results_df = pd.DataFrame(results.items(), columns=['Week', 'Equity']).set_index('Week')
-
-    print()
-    print('___BACKTEST RESULTS___')
-    print(results_df)
-    print(f'Failed weeks: {failed_weeks}')
-    print(results_df.describe())
-    print(f'Backtest time taken {round(backtest_end_time - backtest_start_time, 2)}s')
+    # num_cores = multiprocessing.cpu_count() - 2
+    # result_list = Parallel(n_jobs=num_cores)(delayed(run_backtest)(_year=year,
+    #                                                                _week=week,
+    #                                                                _strategy=strategy,
+    #                                                                _broker=broker) for week, broker in tqdm(brokers.items()))
+    #
+    # results = {week: equity for week, equity, _ in result_list}
+    # failed_weeks = [week for week, _, failed in result_list if failed]
+    #
+    # backtest_end_time = default_timer()
+    # results_df = pd.DataFrame(results.items(), columns=['Week', 'Equity']).set_index('Week')
+    #
+    # print()
+    # print('___BACKTEST RESULTS___')
+    # print(f'Pair: {pair.fxcm_name}. Frequency: {freq}')
+    # print(results_df)
+    # print(f'Failed weeks: {failed_weeks}')
+    # print(results_df.describe())
+    # print(f'Backtest time taken {round(backtest_end_time - backtest_start_time, 2)}s')

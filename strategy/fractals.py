@@ -56,8 +56,6 @@ class FractalStrategy:
 
     def valid_corridor(self, upper_fractal: float, lower_fractal: float) -> bool:
 
-        assert upper_fractal > lower_fractal
-
         width = upper_fractal - lower_fractal
 
         max_width_price = self.max_width.price
@@ -135,3 +133,5 @@ class FractalStrategy:
     @property
     def min_width(self):
         return self._min_width
+
+    self.broker.current_spread

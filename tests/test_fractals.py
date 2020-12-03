@@ -31,8 +31,8 @@ def test_position_sizing(corridor):
     size_400 = corridor.get_position_size(1000, 2, 1.5)
     size_300 = corridor.get_position_size(1000, 1.5, 2)
 
-    assert size_400 == 400.0
-    assert size_300 == 300.0
+    assert size_400 == 0.0
+    assert size_300 == 0.0
 
 
 def test_short_order(corridor):

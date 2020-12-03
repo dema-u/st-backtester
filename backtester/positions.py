@@ -89,10 +89,10 @@ class Position:
     @sl.setter
     def sl(self, new_sl: float):
 
-        # if self.is_long:
-        #     assert new_sl < self._latest_price
-        # else:
-        #     assert self._latest_price < new_sl
+        if self.is_long:
+            assert new_sl < self._latest_price
+        else:
+            assert self._latest_price < new_sl
 
         self._sl = new_sl
 
@@ -103,9 +103,9 @@ class Position:
     @tp.setter
     def tp(self, new_tp: float):
 
-        # if self.is_long:
-        #     assert self._latest_price < new_tp
-        # else:
-        #     assert new_tp < self._latest_price
+        if self.is_long:
+            assert self._latest_price < new_tp
+        else:
+            assert new_tp < self._latest_price
 
         self._tp = new_tp

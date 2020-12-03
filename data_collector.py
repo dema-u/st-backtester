@@ -1,6 +1,3 @@
-import os
-import logging
-import configparser
 import pandas as pd
 import fxcmpy
 import utils
@@ -13,7 +10,7 @@ except ImportError:
     tqdm = None
 
 
-FREQ_MAP = {'m5': '5min', 'm15': '15min', 'm30': '30min', 'H1': '1H', 'H4': '4H', 'D1': '1D', 'W1': '1W'}
+FREQ_MAP = {'m1': '1min', 'm5': '5min', 'm15': '15min', 'm30': '30min', 'H1': '1H', 'H4': '4H', 'D1': '1D', 'W1': '1W'}
 
 
 def get_ticker_data(con, ticker: str, freq: str, first_date: datetime, last_date: datetime) -> pd.DataFrame:
@@ -57,8 +54,8 @@ if __name__ == '__main__':
 
                 utils.DataManager.store_price_data(save_data, ticker.name, freq, raw=True)
                 logger.info(f"Ticker {ticker.name} ({freq}) downloaded and stored")
-            except Exception:
-                logger.exception("Exception occurred")
+            except:
+                logger.exception("message")
 
     api_con.close()
     logger.info(f"Data download finished, API connection closed")

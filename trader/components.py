@@ -9,30 +9,34 @@ class Order:
                  back_price):
 
         self.trader = trader
-        self.order = order
+        self.fxcm_order = order
         self.back_price = back_price
         self.trader.orders.insert(0, self)
 
-    def update(self, latest_price):
+    def update(self, latest_price) -> None:
 
-        position = self.order.get_associated_trade()
+        position = self.fxcm_order.get_associated_trade()
 
         if position is not None:
-            self.trader.logger.info('order became a position, adding a new position and removing order from list.')
+            self.trader.logger.info(f'order {self.id} became a position, removing from orders and adding a position.')
+
             self.trader.orders.remove(self)
+
             Position(trader=self.trader,
                      position=position,
                      back_price=self.back_price)
 
-            self.trader.orders.remove(self)
-
         elif self.status == 'Canceled':
-            print('Order cancelled, removing from orders list.')
+            self.trader.logger.info(f'order {self.id} cancelled, removing from orders list.')
             self.trader.orders.remove(self)
 
     @property
+    def id(self):
+        return self.fxcm_order.get_orderId()
+
+    @property
     def status(self):
-        return self.order.get_status()
+        return self.fxcm_order.get_status()
 
 
 class Position:
@@ -43,33 +47,49 @@ class Position:
                  back_price):
 
         self.trader = trader
-        self.position = position
+        self.fxcm_position = position
         self.back_price = back_price
-        self.trader.positions.insert(0, self)
+
+        if self.trader.position is not None:
+            self.trader.position.close()
+
+        self.trader.position = self
 
         self._is_back = False
 
+        self.trader.logger.info(f'initialized a new position position {self.id}')
+
     def update(self, latest_price):
 
-        if self.position not in self.trader.connection.get_open_trade_ids():
-            self.trader.positions.remove(self)
+        if self.id not in self.trader.connection.get_open_trade_ids():
+            self.trader.logger.info(f'position not found, removing position')
+            self.trader.position = None
 
         if self.is_long and latest_price > self.back_price and self._is_back == False:
+            self.trader.logger.info(f'position {self.id} has reached back level of {self.back_price}')
             self._is_back = True
             self.sl_to_entry()
+
         elif not self.is_long and latest_price < self.back_price and self._is_back == False:
+            self.trader.logger.info(f'position {self.id} has reached back level of {self.back_price}')
             self._is_back = True
             self.sl_to_entry()
 
     def sl_to_entry(self):
-        trade_id = self.position.get_tradeId()
-        open_price = self.position.get_open()
+        open_price = self.fxcm_position.get_open()
+        self.trader.connection.change_trade_stop_limit(self.id, is_stop=True, rate=open_price, is_in_pips=False)
 
-        self.trader.connection.change_trade_stop_limit(trade_id, is_stop=True, rate=open_price, is_in_pips=False)
+    def close(self):
+        self.trader.position = None
+        self.fxcm_position.close()
+
+    @property
+    def id(self):
+        return self.fxcm_position.get_tradeId()
 
     @property
     def is_long(self):
-        return bool(self.position.get_isBuy())
+        return bool(self.fxcm_position.get_isBuy())
 
     @property
     def is_back(self):
@@ -77,9 +97,9 @@ class Position:
 
     @property
     def sl(self):
-        return self.position.get_stop()
+        return self.fxcm_position.get_stop()
 
     @sl.setter
     def sl(self, new_sl):
-        trade_id = self.position.get_tradeId()
+        trade_id = self.fxcm_position.get_tradeId()
         self.trader.connection.change_trade_stop_limit(trade_id, is_stop=True, rate=new_sl, is_in_pips=False)

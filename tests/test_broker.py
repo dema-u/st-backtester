@@ -16,7 +16,7 @@ def test_historical_data(broker):
     for _ in range(25):
         broker.next()
 
-    current_prices = broker._current_prices
+    current_prices = broker.current_prices
     historical_prices = broker.get_historical_prices(history_len=5)
 
     current_prices_test = historical_prices.iloc[-1]
