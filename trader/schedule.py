@@ -8,6 +8,10 @@ class ScheduleHelper:
     day_map = {'Sunday': 1, 'Monday': 2, 'Tuesday': 3, 'Wednesday': 4, 'Thursday': 5, 'Friday': 6, 'Saturday': 7}
     freq_map = {'m1': 1, 'm5': 5}
 
+    START_TIME = '00:00'
+    END_TIME = '23:59'
+    END_TIME_FRI = '19:59'
+
     def __init__(self, time_now, frequency):
 
         if frequency not in list(self.freq_map.keys()):
@@ -18,12 +22,12 @@ class ScheduleHelper:
 
     def get_schedule(self, day: str):
         if day == 'Friday':
-            end_time = '19:55'
+            end_time = self.END_TIME_FRI
         else:
-            end_time = '23:55'
+            end_time = self.END_TIME
 
         if self.week_number_now < ScheduleHelper.day_map[day]:
-            return self.get_time_intervals('00:00', end_time)
+            return self.get_time_intervals(self.START_TIME, end_time)
 
         elif self.week_number_now == ScheduleHelper.day_map[day]:
             next_time = self._time_now - datetime.timedelta(minutes=(self._time_now.minute % self.freq_map[self._frequency]),
@@ -72,10 +76,6 @@ class ScheduleHelper:
     @property
     def week_number_now(self) -> int:
         return ScheduleHelper.day_map[self._time_now.strftime('%A')]
-
-    @property
-    def last_run_time(self) -> datetime:
-        raise NotImplementedError
 
 
 def initialize_schedule(_trader, frequency) -> None:

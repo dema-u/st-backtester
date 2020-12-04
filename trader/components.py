@@ -84,6 +84,10 @@ class Position:
         self.fxcm_position.close()
 
     @property
+    def entry(self):
+        return self.fxcm_position.get_open()
+
+    @property
     def id(self):
         return self.fxcm_position.get_tradeId()
 

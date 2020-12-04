@@ -60,12 +60,6 @@ class Trader:
         if self.position is not None:
             self.position.update(self.latest_price)
 
-        self.logger.debug(f'self.position is None: {self.position is None}')
-        self.logger.debug(f'self.num_positions: {self.num_positions}')
-
-        self.logger.debug(f'len(self.orders): {len(self.orders)}')
-        self.logger.debug(f'self.num_orders: {self.num_orders}')
-
         if self.num_orders == 1 and self.num_positions == 0:
             self.logger.warn(f'loose order {self.connection.get_order_ids()} found, cancelling')
             self.close_all_orders()
@@ -80,12 +74,15 @@ class Trader:
         elif self.num_orders == 0 and self.num_positions == 1:
             self.logger.info(f'position {self.position.id} in place, reached turn price: {self.position.is_back}')
             if self.position.is_back:
+                self.position.sl_to_entry()
                 self.place_backward_order()
 
         elif self.num_orders == 1 and self.num_positions == 1:
             self.place_backward_order()
 
         lock.release()
+
+        return schedule.CancelJob
 
     def place_starting_oco(self):
 
@@ -130,13 +127,11 @@ class Trader:
 
         else:
             self.logger.info('no suitable fractals found for oco order. cancelled all orders.')
+            self.close_all_orders()
 
     def place_backward_order(self):
 
         self.logger.info('placing backward order. setting position stop loss to entry price')
-
-        self.close_all_orders()
-        self.position.sl_to_entry()
 
         historical_price = self.prices
         upper_fractal, lower_fractal = self._strategy.get_fractals(self.prices)
@@ -152,38 +147,51 @@ class Trader:
             size = self._strategy.get_position_size(self.available_equity, entry_l, sl_l)
 
             if self.position.is_long:
-                entry_order = self.connection.create_entry_order(symbol=pair.fxcm_name,
-                                                                 is_buy=False,
-                                                                 limit=target_s,
-                                                                 rate=entry_s,
-                                                                 stop=sl_s,
-                                                                 amount=size,
-                                                                 time_in_force='GTC',
-                                                                 is_in_pips=False)
 
-                self.position.sl = entry_s + Pips(0.3, jpy_pair=self._pair.jpy_pair).price
+                if self.position.entry < entry_s:
+                    self.close_all_orders()
 
-                Order(trader=self,
-                      order=entry_order,
-                      back_price=back_s)
+                    entry_order = self.connection.create_entry_order(symbol=pair.fxcm_name,
+                                                                     is_buy=False,
+                                                                     limit=target_s,
+                                                                     rate=entry_s,
+                                                                     stop=sl_s,
+                                                                     amount=size,
+                                                                     time_in_force='GTC',
+                                                                     is_in_pips=False)
+
+                    self.position.sl = entry_s + Pips(0.3, jpy_pair=self._pair.jpy_pair).price
+
+                    Order(trader=self,
+                          order=entry_order,
+                          back_price=back_s)
+                else:
+                    self.logger.info('sl of long position is above entry of order, not adding order.')
 
             else:
-                entry_order = self.connection.create_entry_order(symbol=pair.fxcm_name,
-                                                                 is_buy=True,
-                                                                 limit=target_l,
-                                                                 rate=entry_l,
-                                                                 stop=sl_l,
-                                                                 amount=size,
-                                                                 time_in_force='GTC',
-                                                                 is_in_pips=False)
 
-                self.position.sl = entry_l - Pips(0.3, jpy_pair=self._pair.jpy_pair).price
+                if self.position.entry > entry_s:
+                    self.close_all_orders()
 
-                Order(trader=self,
-                      order=entry_order,
-                      back_price=back_l)
+                    entry_order = self.connection.create_entry_order(symbol=pair.fxcm_name,
+                                                                     is_buy=True,
+                                                                     limit=target_l,
+                                                                     rate=entry_l,
+                                                                     stop=sl_l,
+                                                                     amount=size,
+                                                                     time_in_force='GTC',
+                                                                     is_in_pips=False)
+
+                    self.position.sl = entry_l - Pips(0.3, jpy_pair=self._pair.jpy_pair).price
+
+                    Order(trader=self,
+                          order=entry_order,
+                          back_price=back_l)
+                else:
+                    self.logger.info('sl of short position is below entry of order, not adding order.')
         else:
             self.logger.info('no suitable fractals found for backward order. cancelled all orders.')
+            self.close_all_orders()
 
     def _process_prices(self, _, data):
 
@@ -213,7 +221,9 @@ class Trader:
             position = self.connection.get_open_position(position_id)
             position.close()
 
-    def close_connection(self):
+    def terminate(self):
+        self.close_all_orders()
+        self.close_all_positions()
         self.connection.close()
 
     @property
@@ -223,7 +233,6 @@ class Trader:
 
         now = datetime.datetime.utcnow()
 
-        # TODO: this makes frequency stuff not needed -> need to expand this
         closest = now - datetime.timedelta(minutes=(now.minute % self.freq_map[self._freq]),
                                            seconds=now.second,
                                            microseconds=now.microsecond)
@@ -271,14 +280,8 @@ if __name__ == '__main__':
     config = ConfigHandler()
     trader_section = config.trader_settings
 
-    logger_helper = LoggerHandler('trader')
-    logger_helper.add_stream_handler()
-    logger_helper.add_path_handler()
-
-    logger = logger_helper.logger
-
-    currency = trader_section['currency']
-    frequency = trader_section['frequency']
+    currency = str(trader_section['currency'])
+    frequency = str(trader_section['frequency'])
 
     target_level = float(trader_section['target_level'])
     back_level = float(trader_section['back_level'])
@@ -287,6 +290,14 @@ if __name__ == '__main__':
     max_width = float(trader_section['max_width'])
     min_width = float(trader_section['min_width'])
     risk = float(trader_section['risk'])
+
+    log_level = str(trader_section['log_level'])
+
+    logger_helper = LoggerHandler('trader', log_level)
+    logger_helper.add_stream_handler()
+    logger_helper.add_path_handler()
+
+    logger = logger_helper.logger
 
     pair = CurrencyPair(currency)
     jpy_pair: bool = pair.jpy_pair
@@ -309,10 +320,17 @@ if __name__ == '__main__':
     while True:
         try:
             schedule.run_pending()
+
+            if len(schedule.jobs) == 0:
+                logger.info('trading week finished. terminating')
+                trader.terminate()
+                break
+
         except:
             logger.exception('trader unexpectedly raised an error. shutting down.')
-            trader.close_connection()
+            trader.terminate()
             break
+
         finally:
             time.sleep(1)
             gc.collect()

@@ -128,14 +128,14 @@ class LoggerHandler:
     filepath_log = os.path.abspath('logs/trader.log')
     logging_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-    def __init__(self, name: Optional[str] = None):
+    def __init__(self, name: Optional[str] = None, log_level='INFO'):
 
         if name is None:
             self._logger = logging.getLogger(__name__)
         else:
             self._logger = logging.getLogger(name)
 
-        self._logger.setLevel(logging.DEBUG)
+        self._set_level(log_level)
         self._add_null_handler()
 
     def add_stream_handler(self) -> None:
@@ -152,6 +152,14 @@ class LoggerHandler:
         null_handler = logging.NullHandler()
         null_handler.setFormatter(LoggerHandler.logging_format)
         self._logger.addHandler(null_handler)
+
+    def _set_level(self, level) -> None:
+        if level == 'DEBUG':
+            self._logger.setLevel(logging.DEBUG)
+        elif level == 'INFO':
+            self._logger.setLevel(logging.INFO)
+        else:
+            raise Exception(f'{level} is an invalid log level.')
 
     @property
     def logger(self):
