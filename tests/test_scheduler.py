@@ -2,6 +2,16 @@ from trader import ScheduleHelper
 from datetime import datetime
 
 
+def test_sunday():
+    dt = datetime(2020, 11, 29, 11, 23, 4)
+    freq = 'm5'
+
+    helper = ScheduleHelper(dt, freq)
+
+    assert helper.monday[0] == '00:00'
+    assert helper.monday[-1] == '23:55'
+
+
 def test_monday_5m():
     dt = datetime(2020, 11, 30, 11, 23, 4)
     freq = 'm5'

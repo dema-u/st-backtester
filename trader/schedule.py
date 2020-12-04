@@ -10,7 +10,7 @@ class ScheduleHelper:
 
     START_TIME = '00:00'
     END_TIME = '23:59'
-    END_TIME_FRI = '19:59'
+    END_TIME_FRI = '20:59'
 
     def __init__(self, time_now, frequency):
 

@@ -89,7 +89,6 @@ class Trader:
 
     def place_starting_oco(self):
 
-        self.logger.debug('placing OCO order.')
         self.close_all_orders()
 
         historical_price = self.prices
@@ -226,6 +225,7 @@ class Trader:
             position.close()
 
     def terminate(self):
+        self.connection.unsubscribe_market_data(self._pair.fxcm_name)
         self.close_all_orders()
         self.close_all_positions()
         self.connection.close()
