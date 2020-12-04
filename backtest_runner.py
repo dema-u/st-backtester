@@ -32,8 +32,8 @@ class StrategyRunner:
 
                 current_prices = self.broker.current_prices
 
-                print(self.broker.equity, len(self.broker.orders), len(self.broker.positions), self.broker.current_time)
-                print('midprice: ', (current_prices['BidClose'] + current_prices['AskClose'])/2)
+                #   print(self.broker.equity, len(self.broker.orders), len(self.broker.positions), self.broker.current_time)
+                #   print('midprice: ', (current_prices['BidClose'] + current_prices['AskClose'])/2)
 
                 if len(self.broker.open_positions) == 0 and len(self.broker.open_orders) == 0:
                     position_lock = False
@@ -98,7 +98,7 @@ class StrategyRunner:
         for order in self.broker.open_orders:
             order.cancel()
 
-        print(f'Placing backward offer! Size: {size}, position size: {position.size}. Long: {not position.is_long}')
+        # print(f'Placing backward offer! Size: {size}, position size: {position.size}. Long: {not position.is_long}')
 
         self.broker.open_entry_order(is_long=order_long,
                                      limit=None,
@@ -109,7 +109,7 @@ class StrategyRunner:
                                      tag=back)
 
     def _place_starting_orders(self, upper_fractal, lower_fractal):
-        print("Placing starting order!")
+        # print("Placing starting order!")
         target_l, back_l, entry_l, sl_l = self.corridor.get_long_order(upper_fractal, lower_fractal)
         target_s, back_s, entry_s, sl_s = self.corridor.get_short_order(upper_fractal, lower_fractal)
 
@@ -158,7 +158,6 @@ def run_backtest(_year, _week, _strategy, _broker):
 
     _runner = StrategyRunner(broker=_broker,
                              corridor=_strategy)
-
     try:
         _runner.run()
     except:
@@ -173,10 +172,10 @@ if __name__ == '__main__':
 
     pair = CurrencyPair('GBPUSD')
     jpy_pair: bool = pair.jpy_pair
-    freq = 'm5'
+    freq = 'm1'
     year = 2020
 
-    cash = 1000.0
+    cash = 10000.0
     leverage = 30
 
     target_level = 4.0
@@ -185,7 +184,7 @@ if __name__ == '__main__':
     sl_extension = Pips(1, jpy_pair)
     max_width = Pips(12, jpy_pair)
     min_width = Pips(4, jpy_pair)
-    risk = 0.0100
+    risk = 0.0050
 
     results = dict()
     failed_weeks = list()
@@ -204,9 +203,6 @@ if __name__ == '__main__':
                                risk=risk)
 
     brokers = {week: Broker(data_handler.get_week(year, week), cash, leverage) for week in all_weeks}
-
-    week = 5
-    run_backtest(year, week, strategy, brokers[week])
 
     num_cores = multiprocessing.cpu_count() - 2
     result_list = Parallel(n_jobs=num_cores)(delayed(run_backtest)(_year=year,

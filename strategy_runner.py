@@ -18,6 +18,8 @@ COLUMNS = list(RENAMER.values())
 
 class Trader:
 
+    freq_map = {'m1': 1, 'm5': 5}
+
     def __init__(self,
                  currency_pair: CurrencyPair,
                  freq: str,
@@ -76,7 +78,7 @@ class Trader:
             self.place_starting_oco()
 
         elif self.num_orders == 0 and self.num_positions == 1:
-            self.logger.info(f'position {self.positon.id} in place, reached turn price: {self.position.is_back}')
+            self.logger.info(f'position {self.position.id} in place, reached turn price: {self.position.is_back}')
             if self.position.is_back:
                 self.place_backward_order()
 
@@ -159,7 +161,7 @@ class Trader:
                                                                  time_in_force='GTC',
                                                                  is_in_pips=False)
 
-                self.position.sl = entry_s + Pips(0.5, jpy_pair=self._pair.jpy_pair).price
+                self.position.sl = entry_s + Pips(0.3, jpy_pair=self._pair.jpy_pair).price
 
                 Order(trader=self,
                       order=entry_order,
@@ -175,7 +177,7 @@ class Trader:
                                                                  time_in_force='GTC',
                                                                  is_in_pips=False)
 
-                self.position.sl = entry_l - Pips(0.5, jpy_pair=self._pair.jpy_pair).price
+                self.position.sl = entry_l - Pips(0.3, jpy_pair=self._pair.jpy_pair).price
 
                 Order(trader=self,
                       order=entry_order,
@@ -222,7 +224,7 @@ class Trader:
         now = datetime.datetime.utcnow()
 
         # TODO: this makes frequency stuff not needed -> need to expand this
-        closest = now - datetime.timedelta(minutes=(now.minute % 5) + 5,
+        closest = now - datetime.timedelta(minutes=(now.minute % self.freq_map[self._freq]),
                                            seconds=now.second,
                                            microseconds=now.microsecond)
 
@@ -302,13 +304,15 @@ if __name__ == '__main__':
                     freq=frequency,
                     logger=logger)
 
-    initialize_schedule(trader)
+    initialize_schedule(trader, frequency)
 
     while True:
         try:
             schedule.run_pending()
         except:
-            logger.exception('message')
+            logger.exception('trader unexpectedly raised an error. shutting down.')
+            trader.close_connection()
+            break
         finally:
             time.sleep(1)
             gc.collect()
