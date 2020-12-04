@@ -5,7 +5,7 @@ import datetime
 import threading
 import gc
 from utils import ConfigHandler, LoggerHandler
-from trader.components import Order
+from trader import Order
 from trader.schedule import initialize_schedule
 from strategy.fractals import FractalStrategy
 from structs import CurrencyPair, Pips
@@ -54,30 +54,33 @@ class Trader:
         lock = threading.Lock()
         lock.acquire()
 
+        # TODO: try push these through _process_price
         for order in list(self.orders):
             order.update(self.latest_price)
-
         if self.position is not None:
             self.position.update(self.latest_price)
 
         if self.num_orders == 1 and self.num_positions == 0:
-            self.logger.warn(f'loose order {self.connection.get_order_ids()} found, cancelling')
+            self.logger.warning(f'loose order {self.connection.get_order_ids()} found, cancelling')
             self.close_all_orders()
 
         if self.num_positions > 1:
-            self.logger.warn(f'multiple positions {self.connection.get_open_trade_ids()} found, cancelling')
+            self.logger.warning(f'multiple positions {self.connection.get_open_trade_ids()} found, cancelling')
             self.close_all_positions()
 
         if self.num_positions == 0:
+            self.logger.info('no orders and no positions detected. placing oco order')
             self.place_starting_oco()
 
         elif self.num_orders == 0 and self.num_positions == 1:
             self.logger.info(f'position {self.position.id} in place, reached turn price: {self.position.is_back}')
             if self.position.is_back:
-                self.position.sl_to_entry()
+                self.logger.info('placing backward order. setting position stop loss to entry price')
                 self.place_backward_order()
 
         elif self.num_orders == 1 and self.num_positions == 1:
+            self.logger.info(f'position {self.position.id} in place, reached turn price: {self.position.is_back}')
+            self.logger.info('placing backward order. setting position stop loss to entry price')
             self.place_backward_order()
 
         lock.release()
@@ -94,6 +97,7 @@ class Trader:
         upper_date, lower_date = self._strategy.get_fractals(historical_price, dates=True)
 
         if (upper_fractal is not None) and (lower_fractal is not None):
+
             target_l, back_l, entry_l, sl_l = self._strategy.get_long_order(upper_fractal, lower_fractal)
             target_s, back_s, entry_s, sl_s = self._strategy.get_short_order(upper_fractal, lower_fractal)
             size = self._strategy.get_position_size(self.available_equity, entry_l, sl_l)
@@ -131,7 +135,7 @@ class Trader:
 
     def place_backward_order(self):
 
-        self.logger.info('placing backward order. setting position stop loss to entry price')
+        self.position.sl_to_entry()
 
         historical_price = self.prices
         upper_fractal, lower_fractal = self._strategy.get_fractals(self.prices)
@@ -139,16 +143,16 @@ class Trader:
 
         if (upper_fractal is not None) and (lower_fractal is not None):
 
-            self.logger.info(f'fractals at {upper_fractal} and {lower_fractal} are between prices, placing backward.')
-            self.logger.info(f'upper fractal date: {upper_date}, lower fractal date: {lower_date}')
-
             target_s, back_s, entry_s, sl_s = self._strategy.get_short_order(upper_fractal, lower_fractal)
             target_l, back_l, entry_l, sl_l = self._strategy.get_long_order(upper_fractal, lower_fractal)
             size = self._strategy.get_position_size(self.available_equity, entry_l, sl_l)
 
+            self.logger.info(f'fractals at {upper_fractal} and {lower_fractal} are between prices, placing oco.')
+            self.logger.info(f'upper fractal date: {upper_date}, lower fractal date: {lower_date}')
+
             if self.position.is_long:
 
-                if self.position.entry < entry_s:
+                if self.position.entry < entry_s < self.latest_price:
                     self.close_all_orders()
 
                     entry_order = self.connection.create_entry_order(symbol=pair.fxcm_name,
@@ -166,11 +170,11 @@ class Trader:
                           order=entry_order,
                           back_price=back_s)
                 else:
-                    self.logger.info('sl of long position is above entry of order, not adding order.')
+                    self.logger.info('sl of long position is above entry, not adding order despite valid fractals.')
 
             else:
 
-                if self.position.entry > entry_s:
+                if self.position.entry > entry_l > self.latest_price:
                     self.close_all_orders()
 
                     entry_order = self.connection.create_entry_order(symbol=pair.fxcm_name,
@@ -188,7 +192,7 @@ class Trader:
                           order=entry_order,
                           back_price=back_l)
                 else:
-                    self.logger.info('sl of short position is below entry of order, not adding order.')
+                    self.logger.info('sl of short position is below entry, not adding order despite of valid fractals.')
         else:
             self.logger.info('no suitable fractals found for backward order. cancelled all orders.')
             self.close_all_orders()
