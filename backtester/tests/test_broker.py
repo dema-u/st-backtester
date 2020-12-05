@@ -6,7 +6,7 @@ from backtester.backtester import Broker
 
 @pytest.fixture
 def broker():
-    file_path = os.path.abspath('test_data/EURUSD-SAMPLE.csv')
+    file_path = os.path.abspath('../../tests/test_data/EURUSD-SAMPLE.csv')
     data = pd.read_csv(file_path, index_col=0, parse_dates=True)
     return Broker(data)
 
