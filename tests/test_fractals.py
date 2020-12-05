@@ -35,6 +35,16 @@ def test_position_sizing(corridor):
     assert size_300 == 0.0
 
 
+def test_incorrect_fractal_short(corridor):
+    with pytest.raises(AttributeError):
+        corridor.get_short_order(1.1006, 1.1007)
+
+
+def test_incorrect_fractal_short(corridor):
+    with pytest.raises(AttributeError):
+        corridor.get_long_order(1.2036, 1.2017)
+
+
 def test_short_order(corridor):
     target, back, entry, sl = corridor.get_short_order(1.20375, 1.20345)
 

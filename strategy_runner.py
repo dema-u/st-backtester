@@ -4,10 +4,11 @@ import time
 import datetime
 import threading
 import gc
-import sys
+import functools
+from typing import Callable
 from utils import ConfigHandler, LoggerHandler
 from trader import Order
-from trader.schedule import initialize_schedule
+from trader.schedule import initialize_schedule, ScheduleHelper
 from strategy.fractals import FractalStrategy
 from structs import CurrencyPair, Pips
 
@@ -50,6 +51,20 @@ class Trader:
 
         self.process_timestep()
 
+    @staticmethod
+    def connection_required(function_: Callable) -> Callable:
+
+        @functools.wraps(function_)
+        def _connection_required(*args, **kwargs):
+            if args[0].connection.is_connected():
+                return function_(*args, **kwargs)
+            else:
+                args[0].connection.connect()
+            return function_(args[0], *args, **kwargs)
+
+        return _connection_required
+
+    @connection_required
     def process_timestep(self):
 
         lock = threading.Lock()
@@ -73,18 +88,22 @@ class Trader:
             self.logger.info('no orders and no positions detected. placing oco order')
             self.place_starting_oco()
 
-        elif (self.num_orders == 0 and self.num_positions == 1) or (self.num_orders == 1 and self.num_positions == 1):
+        elif self.num_orders == 0 and self.num_positions == 1:
             self.logger.info(f'position {self.position.id} in place, reached turn price: {self.position.is_back}')
             if self.position.is_back:
                 self.logger.info('placing backward order. setting position stop loss to entry price')
                 self.place_backward_order()
-        else:
-            self.logger.critical('unsolved scenario - skipping.')
+
+        elif self.num_orders == 1 and self.num_positions == 1:
+            self.logger.info(f'position {self.position.id} in place, reached turn price: {self.position.is_back}')
+            self.logger.info('placing backward order. setting position stop loss to entry price')
+            self.place_backward_order()
 
         lock.release()
 
         return schedule.CancelJob
 
+    @connection_required
     def place_starting_oco(self):
 
         self.close_all_orders()
@@ -130,6 +149,7 @@ class Trader:
             self.logger.info('no suitable fractals found for oco order. cancelled all orders.')
             self.close_all_orders()
 
+    @connection_required
     def place_backward_order(self):
 
         self.position.sl_to_entry()
@@ -144,7 +164,7 @@ class Trader:
             target_l, back_l, entry_l, sl_l = self._strategy.get_long_order(upper_fractal, lower_fractal)
             size = self._strategy.get_position_size(self.available_equity, entry_l, sl_l)
 
-            self.logger.info(f'fractals at {upper_fractal} and {lower_fractal} are between prices, placing back.')
+            self.logger.info(f'fractals at {upper_fractal} and {lower_fractal} are between prices, placing oco.')
             self.logger.info(f'upper fractal date: {upper_date}, lower fractal date: {lower_date}')
 
             if self.position.is_long:
@@ -152,7 +172,7 @@ class Trader:
                 if self.position.entry < entry_s < self.latest_price:
                     self.close_all_orders()
 
-                    entry_order = self.connection.create_entry_order(symbol=self._pair.fxcm_name,
+                    entry_order = self.connection.create_entry_order(symbol=pair.fxcm_name,
                                                                      is_buy=False,
                                                                      limit=target_s,
                                                                      rate=entry_s,
@@ -161,7 +181,7 @@ class Trader:
                                                                      time_in_force='GTC',
                                                                      is_in_pips=False)
 
-                    self.position.sl = entry_s + Pips(0.4, jpy_pair=self._pair.jpy_pair).price
+                    self.position.sl = entry_s + Pips(0.3, jpy_pair=self._pair.jpy_pair).price
 
                     Order(trader=self,
                           order=entry_order,
@@ -174,7 +194,7 @@ class Trader:
                 if self.position.entry > entry_l > self.latest_price:
                     self.close_all_orders()
 
-                    entry_order = self.connection.create_entry_order(symbol=self._pair.fxcm_name,
+                    entry_order = self.connection.create_entry_order(symbol=pair.fxcm_name,
                                                                      is_buy=True,
                                                                      limit=target_l,
                                                                      rate=entry_l,
@@ -183,7 +203,7 @@ class Trader:
                                                                      time_in_force='GTC',
                                                                      is_in_pips=False)
 
-                    self.position.sl = entry_l - Pips(0.4, jpy_pair=self._pair.jpy_pair).price
+                    self.position.sl = entry_l - Pips(0.3, jpy_pair=self._pair.jpy_pair).price
 
                     Order(trader=self,
                           order=entry_order,
@@ -194,6 +214,7 @@ class Trader:
             self.logger.info('no suitable fractals found for backward order. cancelled all orders.')
             self.close_all_orders()
 
+    @connection_required
     def _process_prices(self, _, data):
 
         mid_price = (data.iloc[-1]['Bid'] + data.iloc[-1]['Ask']) / 2
@@ -204,6 +225,7 @@ class Trader:
         if self.position is not None:
             self.position.update(mid_price)
 
+    @connection_required
     def close_all_orders(self):
 
         self.orders = []
@@ -213,6 +235,7 @@ class Trader:
             order = self.connection.get_order(order_id)
             order.delete()
 
+    @connection_required
     def close_all_positions(self):
 
         self.position = None
@@ -222,6 +245,7 @@ class Trader:
             position = self.connection.get_open_position(position_id)
             position.close()
 
+    @connection_required
     def terminate(self):
         self.connection.unsubscribe_market_data(self._pair.fxcm_name)
         self.close_all_orders()
@@ -229,6 +253,7 @@ class Trader:
         self.connection.close()
 
     @property
+    @connection_required
     def prices(self):
         historical_data = self.connection.get_candles(instrument=self._pair.fxcm_name, period=self._freq, number=25)
         historical_data = historical_data.rename(RENAMER, axis=1)[COLUMNS]
@@ -242,23 +267,28 @@ class Trader:
         return historical_data[:closest]
 
     @property
+    @connection_required
     def latest_price(self):
-        last_price = self.connection.get_last_price(self._pair.fxcm_name)
+        last_price = self.connection.get_last_price(pair.fxcm_name)
         return (last_price['Bid'] + last_price['Ask']) / 2
 
     @property
+    @connection_required
     def available_margin(self):
         return self.connection.get_accounts_summary()['usableMargin3'][0]
 
     @property
+    @connection_required
     def available_equity(self):
         return self.connection.get_accounts_summary()['equity'][0]
 
     @property
+    @connection_required
     def num_orders(self):
         return len(self.connection.get_order_ids())
 
     @property
+    @connection_required
     def num_positions(self):
         return len(self.connection.get_open_trade_ids())
 
@@ -326,13 +356,15 @@ if __name__ == '__main__':
             if len(schedule.jobs) == 0:
                 logger.info('trading week finished. terminating')
                 trader.terminate()
-                sys.exit(0)
+                break
 
         except:
             logger.exception('trader unexpectedly raised an error. shutting down.')
             trader.terminate()
-            sys.exit(1)
+            break
 
         finally:
             time.sleep(1)
             gc.collect()
+
+    logger.info('trader reached the end of execution.')
