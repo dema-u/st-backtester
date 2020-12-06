@@ -6,8 +6,8 @@ RUN mkdir strategy/
 RUN mkdir logs/
 
 ADD trader trader/
-COPY structs.py ./
-COPY utils.py ./
+COPY utils/structs.py ./
+COPY utils/utils.py ./
 COPY strategy_runner.py ./
 COPY strategy/fractals.py strategy/
 COPY configs/settings.prod.ini configs/

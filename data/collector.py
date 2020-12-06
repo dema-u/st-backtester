@@ -1,7 +1,7 @@
 import pandas as pd
 import fxcmpy
 import utils
-from structs import CurrencyPair
+from utils.structs import CurrencyPair
 from datetime import datetime
 
 try:

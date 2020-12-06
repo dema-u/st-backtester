@@ -3,7 +3,7 @@ import multiprocessing
 from timeit import default_timer
 from backtester.backtester import Broker
 from strategy.fractals import FractalStrategy
-from structs import CurrencyPair, Pips
+from utils.structs import CurrencyPair, Pips
 from utils import DataHandler
 from tqdm import tqdm
 from joblib import Parallel, delayed

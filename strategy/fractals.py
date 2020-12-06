@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from structs import Pips
+from utils.structs import Pips
 from typing import Optional, Tuple, Any
 
 

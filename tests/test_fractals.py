@@ -1,6 +1,6 @@
 import pytest
 from strategy.fractals import FractalStrategy
-from structs import Pips
+from utils.structs import Pips
 
 
 @pytest.fixture
