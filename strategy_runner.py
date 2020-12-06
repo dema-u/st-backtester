@@ -4,6 +4,7 @@ import time
 import datetime
 import threading
 import gc
+import sys
 from utils import ConfigHandler, LoggerHandler
 from trader import Order
 from trader.schedule import initialize_schedule
@@ -328,12 +329,12 @@ if __name__ == '__main__':
             if len(schedule.jobs) == 0:
                 logger.info('trading week finished. terminating')
                 trader.terminate()
-                break
+                sys.exit(0)
 
         except:
             logger.exception('trader unexpectedly raised an error. shutting down.')
             trader.terminate()
-            break
+            sys.exit(1)
 
         finally:
             time.sleep(1)
