@@ -2,11 +2,10 @@ import schedule
 import time
 import gc
 import sys
-from utils import ConfigHandler, LoggerHandler
-from trader.schedule import initialize_schedule
-from trader import Trader
+from trader import Trader, initialize_schedule
 from strategy import FractalStrategy
 from utils import CurrencyPair, Pips
+from utils import ConfigHandler, LoggerHandler
 
 
 if __name__ == '__main__':
