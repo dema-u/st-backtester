@@ -155,7 +155,7 @@ class Trader:
                 if self.position.entry < entry_s < self.latest_price:
                     self.close_all_orders()
 
-                    entry_order = self.connection.create_entry_order(symbol=pair.fxcm_name,
+                    entry_order = self.connection.create_entry_order(symbol=self._pair.fxcm_name,
                                                                      is_buy=False,
                                                                      limit=target_s,
                                                                      rate=entry_s,
@@ -177,7 +177,7 @@ class Trader:
                 if self.position.entry > entry_l > self.latest_price:
                     self.close_all_orders()
 
-                    entry_order = self.connection.create_entry_order(symbol=pair.fxcm_name,
+                    entry_order = self.connection.create_entry_order(symbol=self._pair.fxcm_name,
                                                                      is_buy=True,
                                                                      limit=target_l,
                                                                      rate=entry_l,
@@ -246,7 +246,7 @@ class Trader:
 
     @property
     def latest_price(self):
-        last_price = self.connection.get_last_price(pair.fxcm_name)
+        last_price = self.connection.get_last_price(self._pair.fxcm_name)
         return (last_price['Bid'] + last_price['Ask']) / 2
 
     @property
