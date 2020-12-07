@@ -24,6 +24,8 @@ def get_ticker_data(con, ticker: str, freq: str, first_date: datetime, last_date
 
 if __name__ == '__main__':
 
+    raise NotImplementedError
+
     logger_helper = utils.LoggerHandler()
     logger_helper.add_stream_handler()
     logger = logger_helper.logger
@@ -36,7 +38,7 @@ if __name__ == '__main__':
     log_file = fxcm_section['log_file']
     log_level = fxcm_section['log_level']
 
-    api_con = fxcmpy.fxcmpy(access_token=access_token, log_file=log_file, log_level=log_level)
+    api_con = fxcmpy.fxcmpy(access_token=access_token, log_level=log_level)
 
     all_tickers = [CurrencyPair(ticker) for ticker in data_section['tickers'].split(',')]
     all_freqs = data_section['frequency'].split(',')

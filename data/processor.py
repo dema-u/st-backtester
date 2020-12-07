@@ -68,6 +68,8 @@ def process_data(data: pd.DataFrame, ticker: CurrencyPair, mode: str) -> pd.Data
 
 if __name__ == '__main__':
 
+    raise NotImplementedError
+
     logger_helper = utils.LoggerHandler()
     logger_helper.add_stream_handler()
     logger = logger_helper.logger

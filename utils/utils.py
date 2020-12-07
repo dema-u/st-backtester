@@ -16,7 +16,6 @@ class DataManager:
 
     @staticmethod
     def create_paths(base_data_path):
-        os.mkdir(base_data_path)
         os.mkdir(os.path.join(base_data_path, DataManager._RAW_FOLDER))
         os.mkdir(os.path.join(base_data_path, DataManager._CLEAN_FOLDER))
         os.mkdir(os.path.join(base_data_path, DataManager._RAW_FOLDER, DataManager._PRICES_FOLDER))

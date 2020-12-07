@@ -81,6 +81,8 @@ class Trader:
                 self.place_backward_order()
             else:
                 self.close_all_orders()
+        else:
+            self.logger.critical('unsolved scenario - skipping.')
 
         lock.release()
 

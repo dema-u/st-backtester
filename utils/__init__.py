@@ -1,2 +1,2 @@
 from utils.structs import Pips, CurrencyPair
-from utils.utils import DataHandler, ConfigHandler, LoggerHandler
+from utils.utils import DataManager, DataHandler, ConfigHandler, LoggerHandler
