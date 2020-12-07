@@ -73,16 +73,13 @@ class Trader:
             self.logger.info('no orders and no positions detected. placing oco order')
             self.place_starting_oco()
 
-        elif self.num_orders == 0 and self.num_positions == 1:
+        elif (self.num_orders == 0 and self.num_positions == 1) or (self.num_orders == 1 and self.num_positions == 1):
             self.logger.info(f'position {self.position.id} in place, reached turn price: {self.position.is_back}')
             if self.position.is_back:
                 self.logger.info('placing backward order. setting position stop loss to entry price')
                 self.place_backward_order()
-
-        elif self.num_orders == 1 and self.num_positions == 1:
-            self.logger.info(f'position {self.position.id} in place, reached turn price: {self.position.is_back}')
-            self.logger.info('placing backward order. setting position stop loss to entry price')
-            self.place_backward_order()
+        else:
+            self.logger.critical('unsolved scenario - skipping.')
 
         lock.release()
 
@@ -147,7 +144,7 @@ class Trader:
             target_l, back_l, entry_l, sl_l = self._strategy.get_long_order(upper_fractal, lower_fractal)
             size = self._strategy.get_position_size(self.available_equity, entry_l, sl_l)
 
-            self.logger.info(f'fractals at {upper_fractal} and {lower_fractal} are between prices, placing oco.')
+            self.logger.info(f'fractals at {upper_fractal} and {lower_fractal} are between prices, placing back.')
             self.logger.info(f'upper fractal date: {upper_date}, lower fractal date: {lower_date}')
 
             if self.position.is_long:
@@ -164,7 +161,7 @@ class Trader:
                                                                      time_in_force='GTC',
                                                                      is_in_pips=False)
 
-                    self.position.sl = entry_s + Pips(0.3, jpy_pair=self._pair.jpy_pair).price
+                    self.position.sl = entry_s + Pips(0.4, jpy_pair=self._pair.jpy_pair).price
 
                     Order(trader=self,
                           order=entry_order,
@@ -186,7 +183,7 @@ class Trader:
                                                                      time_in_force='GTC',
                                                                      is_in_pips=False)
 
-                    self.position.sl = entry_l - Pips(0.3, jpy_pair=self._pair.jpy_pair).price
+                    self.position.sl = entry_l - Pips(0.4, jpy_pair=self._pair.jpy_pair).price
 
                     Order(trader=self,
                           order=entry_order,
