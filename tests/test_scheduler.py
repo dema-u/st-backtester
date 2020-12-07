@@ -1,4 +1,4 @@
-from trader import ScheduleHelper
+from trader.schedule import ScheduleHelper
 from datetime import datetime
 
 

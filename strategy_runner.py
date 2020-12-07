@@ -51,6 +51,7 @@ if __name__ == '__main__':
     initialize_schedule(trader, frequency)
 
     while True:
+
         try:
             schedule.run_pending()
 

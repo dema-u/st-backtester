@@ -41,25 +41,10 @@ class Trader:
         self.close_all_orders()
         self.close_all_positions()
 
-        self._account_id = self.connection.get_account_ids()[0]
         self.connection.subscribe_market_data(self._pair.fxcm_name, (self._process_prices,))
 
         self.logger = logger
 
-    @staticmethod
-    def connection_required(function_):
-
-        @functools.wraps(function_)
-        def _connection_required(*args, **kwargs):
-            if args[0].connection.is_connected():
-                return function_(*args, **kwargs)
-            else:
-                args[0].connection.connect()
-            return function_(args[0], *args, **kwargs)
-
-        return _connection_required
-
-    @connection_required
     def process_timestep(self):
 
         lock = threading.Lock()
@@ -91,14 +76,16 @@ class Trader:
 
         elif self.num_orders == 1 and self.num_positions == 1:
             self.logger.info(f'position {self.position.id} in place, reached turn price: {self.position.is_back}')
-            self.logger.info('placing backward order. setting position stop loss to entry price')
-            self.place_backward_order()
+            if self.position.is_back:
+                self.logger.info('placing backward order. setting position stop loss to entry price')
+                self.place_backward_order()
+            else:
+                self.close_all_orders()
 
         lock.release()
 
         return schedule.CancelJob
 
-    @connection_required
     def place_starting_oco(self):
 
         self.close_all_orders()
@@ -144,7 +131,6 @@ class Trader:
             self.logger.info('no suitable fractals found for oco order. cancelled all orders.')
             self.close_all_orders()
 
-    @connection_required
     def place_backward_order(self):
 
         self.position.sl_to_entry()
@@ -209,7 +195,6 @@ class Trader:
             self.logger.info('no suitable fractals found for backward order. cancelled all orders.')
             self.close_all_orders()
 
-    @connection_required
     def _process_prices(self, _, data):
 
         mid_price = (data.iloc[-1]['Bid'] + data.iloc[-1]['Ask']) / 2
@@ -220,7 +205,6 @@ class Trader:
         if self.position is not None:
             self.position.update(mid_price)
 
-    @connection_required
     def close_all_orders(self):
 
         self.orders = []
@@ -230,7 +214,6 @@ class Trader:
             order = self.connection.get_order(order_id)
             order.delete()
 
-    @connection_required
     def close_all_positions(self):
 
         self.position = None
@@ -240,7 +223,6 @@ class Trader:
             position = self.connection.get_open_position(position_id)
             position.close()
 
-    @connection_required
     def terminate(self):
         self.connection.unsubscribe_market_data(self._pair.fxcm_name)
         self.close_all_orders()
@@ -248,7 +230,6 @@ class Trader:
         self.connection.close()
 
     @property
-    @connection_required
     def prices(self):
         historical_data = self.connection.get_candles(instrument=self._pair.fxcm_name, period=self._freq, number=25)
         historical_data = historical_data.rename(RENAMER, axis=1)[COLUMNS]
@@ -262,28 +243,23 @@ class Trader:
         return historical_data[:closest]
 
     @property
-    @connection_required
     def latest_price(self):
         last_price = self.connection.get_last_price(self._pair.fxcm_name)
         return (last_price['Bid'] + last_price['Ask']) / 2
 
     @property
-    @connection_required
     def available_margin(self):
         return self.connection.get_accounts_summary()['usableMargin3'][0]
 
     @property
-    @connection_required
     def available_equity(self):
         return self.connection.get_accounts_summary()['equity'][0]
 
     @property
-    @connection_required
     def num_orders(self):
         return len(self.connection.get_order_ids())
 
     @property
-    @connection_required
     def num_positions(self):
         return len(self.connection.get_open_trade_ids())
 
