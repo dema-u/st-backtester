@@ -1,12 +1,13 @@
 import pandas as pd
 import numpy as np
-from utils.structs import Pips
-from typing import Optional, Tuple, Any
+from utils import Pips, CurrencyPair
+from typing import Optional, Tuple, Any, List
 
 
 class FractalStrategy:
 
     def __init__(self,
+                 currency_pair: CurrencyPair,
                  target_level: float = 4.1,
                  back_level: float = 2.0,
                  break_level: Pips = Pips(2),
@@ -15,6 +16,7 @@ class FractalStrategy:
                  min_width: Pips = Pips(2),
                  risk: float = 0.10):
 
+        self._pair = currency_pair
         self._target_level = target_level
         self._back_level = back_level
         self._break_level = break_level
@@ -37,6 +39,11 @@ class FractalStrategy:
         entry_level = upper_fractal + self.break_level.price
         sl_level = lower_fractal - self.sl_extension.price
 
+        target_level, back_level, entry_level, sl_level = self.trim_precision(target_level,
+                                                                              back_level,
+                                                                              entry_level,
+                                                                              sl_level)
+
         return target_level, back_level, entry_level, sl_level
 
     def get_short_order(self, upper_fractal: float, lower_fractal: float) -> Tuple[float, float, float, float]:
@@ -51,6 +58,11 @@ class FractalStrategy:
 
         entry_level = lower_fractal - self.break_level.price
         sl_level = upper_fractal + self.sl_extension.price
+
+        target_level, back_level, entry_level, sl_level = self.trim_precision(target_level,
+                                                                              back_level,
+                                                                              entry_level,
+                                                                              sl_level)
 
         return target_level, back_level, entry_level, sl_level
 
@@ -112,9 +124,13 @@ class FractalStrategy:
             if dates:
                 return upper_fractal_date, lower_fractal_date
             else:
+                upper_fractal, lower_fractal = self.trim_precision(upper_fractal, lower_fractal)
                 return upper_fractal, lower_fractal
         else:
             return None, None
+
+    def trim_precision(self, *args):
+        return tuple(round(arg, self._pair.price_precision) for arg in args)
 
     @property
     def target_level(self):

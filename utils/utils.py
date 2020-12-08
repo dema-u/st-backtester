@@ -98,8 +98,8 @@ class DataHandler:
 
 
 class ConfigHandler:
-    prod_path = os.path.abspath('../configs/settings.prod.ini')
-    dev_path = os.path.abspath('../configs/settings.dev.ini')
+    prod_path = os.path.join(os.path.dirname(__file__), '../configs/settings.prod.ini')
+    dev_path = os.path.join(os.path.dirname(__file__), '../configs/settings.dev.ini')
 
     def __init__(self):
 
@@ -124,7 +124,7 @@ class ConfigHandler:
 
 
 class LoggerHandler:
-    filepath_log = os.path.abspath('../logs/trader.log')
+    filepath_log = os.path.join(os.path.dirname(__file__), '../logs/trader.log')
     logging_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     def __init__(self, name: Optional[str] = None, log_level='INFO'):

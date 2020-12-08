@@ -35,7 +35,8 @@ if __name__ == '__main__':
     pair = CurrencyPair(currency)
     jpy_pair: bool = pair.jpy_pair
 
-    strategy = FractalStrategy(target_level=target_level,
+    strategy = FractalStrategy(currency_pair=pair,
+                               target_level=target_level,
                                back_level=back_level,
                                break_level=Pips(break_level, jpy_pair),
                                sl_extension=Pips(sl_extension, jpy_pair),
