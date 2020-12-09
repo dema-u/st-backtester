@@ -4,6 +4,7 @@ from utils import CurrencyPair, ConfigHandler
 from typing import List, Optional, Tuple
 from trader.orders import Order, FXCMOrder
 
+
 RENAMER = {'bidopen': 'BidOpen', 'bidhigh': 'BidHigh', 'bidlow': 'BidLow', 'bidclose': 'BidClose',
            'askopen': 'AskOpen', 'askhigh': 'AskHigh', 'asklow': 'AskLow', 'askclose': 'AskClose'}
 
@@ -52,7 +53,7 @@ class Broker:
     @check_connection
     def place_entry_order(self,
                           order: Order,
-                          replace=False) -> Optional[FXCMOrder]:
+                          replace: bool) -> Optional[FXCMOrder]:
 
         is_long = order.is_long
         entry = round(order.entry, self._pair.price_precision)
@@ -84,7 +85,7 @@ class Broker:
                                                           time_in_force='GTC',
                                                           is_in_pips=False)
 
-        return order.get_fxcm_order(connection=self, order=entry_order)
+        return order.get_fxcm_order(broker=self, order=entry_order)
 
     @check_connection
     def place_oco_order(self,
@@ -110,9 +111,9 @@ class Broker:
 
             for order in oco_order.get_orders():
                 if order.get_isBuy():
-                    buy_fxcm_order = buy_order.get_fxcm_order(connection=self, order=order)
+                    buy_fxcm_order = buy_order.get_fxcm_order(broker=self, order=order)
                 else:
-                    sell_fxcm_order = sell_order.get_fxcm_order(connection=self, order=order)
+                    sell_fxcm_order = sell_order.get_fxcm_order(broker=self, order=order)
 
             return buy_fxcm_order, sell_fxcm_order
 

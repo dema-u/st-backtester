@@ -40,8 +40,6 @@ class Trader:
 
         self.logger = logger
 
-        self.process_timestep()
-
     def process_timestep(self):
 
         lock = threading.Lock()
@@ -143,7 +141,7 @@ class Trader:
 
             if self.position.is_long:
 
-                if self.position.entry < entry_s < self.broker.latest_price:
+                if self.position.open_price < entry_s < self.broker.latest_price:
 
                     short_order = Order(self,
                                         is_long=False,
@@ -154,7 +152,7 @@ class Trader:
                                         back_price=back_s)
 
                     try:
-                        _ = self.broker.place_entry_order(self, short_order, replace=False)
+                        _ = self.broker.place_entry_order(order=short_order, replace=False)
                         self.position.sl = entry_s + Pips(0.3, jpy_pair=self._pair.jpy_pair).price
                     except IndexError:
                         self.logger.error('Index error while placing oco, skipping timestep')
@@ -164,7 +162,7 @@ class Trader:
 
             else:
 
-                if self.position.entry > entry_l > self.broker.latest_price:
+                if self.position.open_price > entry_l > self.broker.latest_price:
 
                     long_order = Order(self,
                                        is_long=True,
@@ -174,9 +172,8 @@ class Trader:
                                        size=size,
                                        back_price=back_l)
 
-
                     try:
-                        _ = self.broker.place_entry_order(self, long_order, replace=False)
+                        _ = self.broker.place_entry_order(order=long_order, replace=False)
                         self.position.sl = entry_l - Pips(0.3, jpy_pair=self._pair.jpy_pair).price
                     except IndexError:
                         self.logger.error('Index error while placing oco, skipping timestep')

@@ -14,7 +14,7 @@ class Order:
         self._size = size
         self._back_price = back_price
 
-    def get_fxcm_order(self, connection, order):
+    def get_fxcm_order(self, broker, order):
         return FXCMOrder(trader=self._trader,
                          is_long=self._is_long,
                          entry=self._entry,
@@ -22,7 +22,7 @@ class Order:
                          sl=self._sl,
                          size=self.size,
                          back_price=self._back_price,
-                         broker=connection,
+                         broker=broker,
                          fxcm_order=order)
 
     @property
@@ -44,6 +44,10 @@ class Order:
     @property
     def sl(self) -> float:
         return self._sl
+
+    @property
+    def back_price(self) -> float:
+        return self._back_price
 
 
 class FXCMOrder(Order):
