@@ -23,7 +23,7 @@ class DataManager:
 
     @staticmethod
     def store_price_data(data: pd.DataFrame, ticker: str, freq: str, raw: bool) -> None:
-        base_data_path = os.path.abspath(DataManager._DATA_FOLDER)
+        base_data_path = os.path.join(os.path.dirname(__file__), '..', DataManager._DATA_FOLDER)
 
         if not os.path.exists(base_data_path):
             DataManager.create_paths(base_data_path)
@@ -44,7 +44,7 @@ class DataManager:
 
     @staticmethod
     def read_price_data(ticker: str, freq: str, raw: bool = False) -> pd.DataFrame:
-        base_data_path = os.path.abspath(DataManager._DATA_FOLDER)
+        base_data_path = os.path.join(os.path.dirname(__file__), '..', DataManager._DATA_FOLDER)
         ticker_file = ticker + '.csv'
 
         if raw:

@@ -5,6 +5,25 @@ from trader.trader import Trader
 from strategy.fractals import FractalStrategy
 from unittest.mock import Mock, patch
 from utils import Pips
+from trader import Order
+
+
+@pytest.fixture
+def simple_order():
+
+    trader = Mock()
+    trader.orders = []
+    trader.position = None
+
+    order = Order(trader=trader,
+                  is_long=True,
+                  entry=1.0,
+                  tp=2.0,
+                  sl=0.5,
+                  size=5,
+                  back_price=1.5)
+
+    return order
 
 
 @pytest.fixture
@@ -30,15 +49,6 @@ def mocked_fxcm_order():
 
 
 @pytest.fixture
-def mocked_fxcm_position():
-
-    position_mock = Mock(name='Position Mock')
-    position_mock.get_tradeId.return_value = 0
-
-    return position_mock
-
-
-@pytest.fixture
 def mocked_broker(mocked_connection, mocked_logger):
 
     pair = CurrencyPair('EURUSD')
@@ -60,6 +70,15 @@ def mocked_trader(mocked_broker, mocked_logger, strategy):
         trader = Trader(currency_pair=pair, strategy=strategy, freq=freq, logger=mocked_logger)
 
     return trader
+
+
+@pytest.fixture
+def mocked_fxcm_position():
+
+    position_mock = Mock(name='Position Mock')
+    position_mock.get_tradeId.return_value = 0
+
+    return position_mock
 
 
 @pytest.fixture

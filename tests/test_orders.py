@@ -3,24 +3,6 @@ from trader import Order
 import pytest
 
 
-@pytest.fixture
-def simple_order():
-
-    trader = Mock()
-    trader.orders = []
-    trader.position = None
-
-    order = Order(trader=trader,
-                  is_long=True,
-                  entry=1.0,
-                  tp=2.0,
-                  sl=0.5,
-                  size=5,
-                  back_price=1.5)
-
-    return order
-
-
 def test_order_init(simple_order):
 
     is_long = True

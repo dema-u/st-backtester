@@ -73,6 +73,8 @@ class Broker:
 
                 if order_long == is_long and order_tp == tp and order_sl == sl:
                     return None
+                else:
+                    fxcm_order.delete()
         else:
             self.cancel_all_orders()
 
