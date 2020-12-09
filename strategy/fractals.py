@@ -120,11 +120,12 @@ class FractalStrategy:
         upper_entry = upper_fractal + self.break_level.price
         lower_entry = lower_fractal - self.break_level.price
 
+        upper_fractal, lower_fractal = self.trim_precision(upper_fractal, lower_fractal)
+
         if upper_entry > latest_price > lower_entry and self.valid_corridor(upper_fractal, lower_fractal):
             if dates:
                 return upper_fractal_date, lower_fractal_date
             else:
-                upper_fractal, lower_fractal = self.trim_precision(upper_fractal, lower_fractal)
                 return upper_fractal, lower_fractal
         else:
             return None, None

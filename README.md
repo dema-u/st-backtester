@@ -2,7 +2,7 @@
 
 ST-Patterns algorithm implementation to trade on the FXCM exchange.
 
-### Versioning
+## Versioning
 
 The repository and the trading bot follow the standard semantic versioning as major.minor.patch-release.
 
@@ -14,7 +14,7 @@ The repository and the trading bot follow the standard semantic versioning as ma
 
 All releases that are under development and are not ready to be allocated real capital will have a ```dev``` flag for release.
 
-### Capital Allocation
+## Capital Allocation
 
 To allocate capital to any given version of the algorithm the following criteria must be met.
 
