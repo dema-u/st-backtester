@@ -4,12 +4,12 @@ class FXCMPosition:
 
     def __init__(self,
                  trader,
-                 connection,
+                 broker,
                  fxcm_position,
                  back_price):
 
         self._trader = trader
-        self._connection = connection
+        self._broker = broker
         self._fxcm_position = fxcm_position
         self._id = fxcm_position.get_tradeId()
 
@@ -28,12 +28,12 @@ class FXCMPosition:
 
         self._trader.position = self
 
-        self._trader.logger.info(f'position {self.id} initialized')
+        self._trader.logger.info(f'{self.direction} position {self.id} initialized')
 
     def update(self, latest_price):
 
-        if self.id not in self._connection.open_position_ids:
-            self._trader.logger.info(f'position {self.id} not found, removing position')
+        if self.id not in self._broker.open_position_ids:
+            self._trader.logger.info(f'{self.direction} position {self.id} not found, removing position')
             self._trader.position = None
 
         if self.is_long and latest_price > self._back_price and self._is_back == False:
@@ -42,13 +42,17 @@ class FXCMPosition:
             self.flag_back_price()
 
     def flag_back_price(self):
-        self._trader.logger.info(f'position {self.id} has reached back level of {self._back_price}')
+        self._trader.logger.info(f'{self.direction} position {self.id} has reached back level of {self._back_price}')
         self._is_back = True
         self.sl = self.open_price
 
     def close(self):
         self._trader.position = None
         self._fxcm_position.close()
+
+    @property
+    def direction(self):
+        return 'long' if self.is_long else 'short'
 
     @property
     def open_price(self):
@@ -60,7 +64,7 @@ class FXCMPosition:
 
     @sl.setter
     def sl(self, new_sl):
-        self._connection.change_position_sl(self.id, new_sl)
+        self._broker.change_position_sl(self.id, new_sl)
 
     @property
     def is_long(self):

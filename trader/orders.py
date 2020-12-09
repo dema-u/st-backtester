@@ -22,7 +22,7 @@ class Order:
                          sl=self._sl,
                          size=self.size,
                          back_price=self._back_price,
-                         connection=connection,
+                         broker=connection,
                          fxcm_order=order)
 
     @property
@@ -48,10 +48,10 @@ class Order:
 
 class FXCMOrder(Order):
 
-    def __init__(self, connection, fxcm_order, *args, **kwargs):
+    def __init__(self, broker, fxcm_order, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self._connection = connection
+        self._broker = broker
         self._fxcm_order = fxcm_order
         self._trader.orders.insert(0, self)
 
@@ -60,26 +60,30 @@ class FXCMOrder(Order):
         self._sl = fxcm_order.get_stop()
         self._size = fxcm_order.get_amount()
 
-        self._trader.logger.info(f'order {self.id} initialized')
+        self._trader.logger.info(f'{self.direction} order {self.id} initialized')
 
     def update(self) -> None:
 
         position = self._fxcm_order.get_associated_trade()
 
         if position is not None:
-            self._trader.logger.info(f'order {self.id} became a position, removing from orders and adding a position.')
+            self._trader.logger.info(f'{self.direction} order {self.id} became a position, removing from orders and adding a position.')
             self._trader.orders.remove(self)
             self._initialize_position(position)
 
         elif self.status == 'Canceled':
-            self._trader.logger.info(f'order {self.id} cancelled, removing from orders list.')
+            self._trader.logger.info(f'{self.direction} order {self.id} cancelled, removing from orders list.')
             self._trader.orders.remove(self)
 
     def _initialize_position(self, position):
         FXCMPosition(trader=self._trader,
-                     connection=self._connection,
+                     broker=self._broker,
                      fxcm_position=position,
                      back_price=self._back_price)
+
+    @property
+    def direction(self) -> str:
+        return 'long' if self._is_long else 'short'
 
     @property
     def id(self) -> int:

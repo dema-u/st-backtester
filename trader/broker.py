@@ -84,7 +84,7 @@ class Broker:
                                                           time_in_force='GTC',
                                                           is_in_pips=False)
 
-        return order.get_fxcm_order(self, entry_order)
+        return order.get_fxcm_order(connection=self, order=entry_order)
 
     @check_connection
     def place_oco_order(self,
@@ -110,9 +110,9 @@ class Broker:
 
             for order in oco_order.get_orders():
                 if order.get_isBuy():
-                    buy_fxcm_order = buy_order.get_fxcm_order(self, order)
+                    buy_fxcm_order = buy_order.get_fxcm_order(connection=self, order=order)
                 else:
-                    sell_fxcm_order = sell_order.get_fxcm_order(self, order)
+                    sell_fxcm_order = sell_order.get_fxcm_order(connection=self, order=order)
 
             return buy_fxcm_order, sell_fxcm_order
 
