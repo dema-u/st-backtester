@@ -116,6 +116,8 @@ class Trader:
                     _ = self.broker.place_oco_order(buy_order=long_order, sell_order=short_order, replace=True)
                 except IndexError:
                     self.logger.error('Index error while placing oco, skipping timestep')
+            else:
+                self.logger.info(f'fractals at {upper_fractal} and {lower_fractal} aren\'t between prices.')
 
         else:
             self.logger.info('no suitable fractals found for oco order. cancelled all orders.')
