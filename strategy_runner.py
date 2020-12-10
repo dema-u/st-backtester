@@ -47,7 +47,7 @@ if __name__ == '__main__':
                     freq=frequency)
 
     initialize_schedule(trader, frequency)
-    logger.info('trader and schedule initialized. starting trading...')
+    logger.info(f'trader and schedule initialized. trading {currency} on {frequency} frequency...')
 
     while True:
 
