@@ -4,6 +4,13 @@ from utils.structs import CurrencyPair, Pips
 from strategy import FractalStrategy
 from trader.orders import Order
 from trader.broker import Broker
+from utils import LoggerHandler
+
+
+logger_helper = LoggerHandler(__name__, "INFO")
+logger_helper.add_stream_handler()
+logger_helper.add_path_handler()
+logger = logger_helper.logger
 
 
 RENAMER = {'bidopen': 'BidOpen', 'bidhigh': 'BidHigh', 'bidlow': 'BidLow', 'bidclose': 'BidClose',
@@ -20,14 +27,13 @@ class Trader:
     def __init__(self,
                  currency_pair: CurrencyPair,
                  freq: str,
-                 strategy: FractalStrategy,
-                 logger):
+                 strategy: FractalStrategy):
 
         self._pair = currency_pair
         self._freq = freq
 
         self._strategy = strategy
-        self.broker = Broker(currency_pair, freq, logger)
+        self.broker = Broker(currency_pair, freq)
 
         self.orders = []
         self.position = None
@@ -36,7 +42,7 @@ class Trader:
         self.broker.cancel_all_orders()
         self.broker.cancel_all_positions()
 
-        self.broker.add_callback(self._fxcm_callback)
+        self.broker.subscribe_data()
 
         self.logger = logger
 
@@ -46,34 +52,20 @@ class Trader:
         lock.acquire()
 
         self._process_prices(self.broker.latest_price)
-
-        if self.broker.num_orders == 1 and self.broker.num_positions == 0:
-            self.logger.warning(f'loose order {self.broker.open_order_ids} found, cancelling')
-            self.broker.cancel_all_orders()
-
-        if self.broker.num_positions > 1:
-            self.logger.warning(f'multiple positions {self.broker.open_position_ids} found, cancelling')
-            self.broker.cancel_all_positions()
+        self.cancel_all_orders()
+        logger.info('cancelled all orders')
 
         if self.broker.num_positions == 0:
             self.logger.info('no positions detected. placing oco order')
             self.place_starting_oco()
-
-        elif self.broker.num_orders == 0 and self.broker.num_positions == 1:
+        elif self.broker.num_positions == 1:
             self.logger.info(f'{self.position.direction} position {self.position.id} in place, reached turn price: {self.position.is_back}')
             if self.position.is_back:
                 self.logger.info('placing backward order. setting position stop loss to entry price')
                 self.place_backward_order()
-
-        elif self.broker.num_orders == 1 and self.broker.num_positions == 1:
-            self.logger.info(f'{self.position.direction} position {self.position.id} in place, reached turn price: {self.position.is_back}')
-            if self.position.is_back:
-                self.logger.info('placing backward order. setting position stop loss to entry price')
-                self.place_backward_order()
-            else:
-                self.broker.cancel_all_orders()
         else:
-            self.logger.critical('unsolved scenario - skipping.')
+            self.logger.critical(f'multiple positions {self.broker.open_position_ids} found, cancelling')
+            self.broker.cancel_all_positions()
 
         lock.release()
 
@@ -116,12 +108,14 @@ class Trader:
                     _ = self.broker.place_oco_order(buy_order=long_order, sell_order=short_order, replace=True)
                 except IndexError:
                     self.logger.error('Index error while placing oco, skipping timestep')
+                except ValueError:
+                    self.logger.error('Value error while placing oco, skipping timestep')
+
             else:
                 self.logger.info(f'fractals at {upper_fractal} and {lower_fractal} aren\'t between prices.')
 
         else:
-            self.logger.info('no suitable fractals found for oco order. cancelled all orders.')
-            self.broker.cancel_all_orders()
+            self.logger.info('no suitable fractals found for oco order, skipping timestep')
 
     def place_backward_order(self):
 
@@ -154,10 +148,12 @@ class Trader:
                                         back_price=back_s)
 
                     try:
-                        _ = self.broker.place_entry_order(order=short_order, replace=False)
+                        _ = self.broker.place_entry_order(order=short_order, replace=True)
                         self.position.sl = entry_s + Pips(0.3, jpy_pair=self._pair.jpy_pair).price
                     except IndexError:
-                        self.logger.error('Index error while placing oco, skipping timestep')
+                        self.logger.error('Index error while placing backward, skipping timestep')
+                    except ValueError:
+                        self.logger.error('Value error while placing backward, skipping timestep')
 
                 else:
                     self.logger.info('sl of long position is above entry, not adding order despite valid fractals.')
@@ -175,16 +171,28 @@ class Trader:
                                        back_price=back_l)
 
                     try:
-                        _ = self.broker.place_entry_order(order=long_order, replace=False)
+                        _ = self.broker.place_entry_order(order=long_order, replace=True)
                         self.position.sl = entry_l - Pips(0.3, jpy_pair=self._pair.jpy_pair).price
                     except IndexError:
-                        self.logger.error('Index error while placing oco, skipping timestep')
+                        self.logger.error('Index error while placing backward, skipping timestep')
+                    except ValueError:
+                        self.logger.error('Value error while placing backward, skipping timestep')
 
                 else:
                     self.logger.info('sl of short position is below entry, not adding order despite of valid fractals.')
         else:
-            self.logger.info('no suitable fractals found for backward order. cancelled all orders.')
-            self.broker.cancel_all_orders()
+            self.logger.info('no suitable fractals found for backward order. skipping timestep')
+
+    def cancel_all_orders(self):
+        self.orders = []
+        self.broker.cancel_all_orders()
+
+    def cancel_all_positions(self):
+        self.position = None
+        self.broker.cancel_all_positions()
+
+    def update_trader(self):
+        self._process_prices(self.broker.latest_price)
 
     def _fxcm_callback(self, _, data):
         mid_price = (data.iloc[-1]['Bid'] + data.iloc[-1]['Ask']) / 2
@@ -200,5 +208,4 @@ class Trader:
 
     def terminate(self):
         self.broker.cancel_all_orders()
-        self.broker.cancel_all_positions()
         self.broker.close_connection()

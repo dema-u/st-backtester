@@ -1,4 +1,11 @@
 from trader.position import FXCMPosition
+from utils import LoggerHandler
+
+
+logger_helper = LoggerHandler(__name__, "INFO")
+logger_helper.add_stream_handler()
+logger_helper.add_path_handler()
+logger = logger_helper.logger
 
 
 class Order:
@@ -64,19 +71,19 @@ class FXCMOrder(Order):
         self._sl = fxcm_order.get_stop()
         self._size = fxcm_order.get_amount()
 
-        self._trader.logger.info(f'{self.direction} order {self.id} initialized')
+        logger.info(f'{self.direction} order {self.id} initialized')
 
     def update(self) -> None:
 
         position = self._fxcm_order.get_associated_trade()
 
         if position is not None:
-            self._trader.logger.info(f'{self.direction} order {self.id} became a position, removing from orders and adding a position.')
+            logger.info(f'{self.direction} order {self.id} became a position, removing from orders and adding a position.')
             self._trader.orders.remove(self)
             self._initialize_position(position)
 
         elif self.status == 'Canceled':
-            self._trader.logger.info(f'{self.direction} order {self.id} cancelled, removing from orders list.')
+            logger.info(f'{self.direction} order {self.id} cancelled, removing from orders list.')
             self._trader.orders.remove(self)
 
     def _initialize_position(self, position):

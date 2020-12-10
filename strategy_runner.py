@@ -8,6 +8,12 @@ from utils import CurrencyPair, Pips
 from utils import ConfigHandler, LoggerHandler
 
 
+logger_helper = LoggerHandler(__name__, "INFO")
+logger_helper.add_stream_handler()
+logger_helper.add_path_handler()
+logger = logger_helper.logger
+
+
 if __name__ == '__main__':
 
     config = ConfigHandler()
@@ -24,14 +30,6 @@ if __name__ == '__main__':
     min_width = float(trader_section['min_width'])
     risk = float(trader_section['risk'])
 
-    log_level = str(trader_section['log_level'])
-
-    logger_helper = LoggerHandler('trader', log_level)
-    logger_helper.add_stream_handler()
-    logger_helper.add_path_handler()
-
-    logger = logger_helper.logger
-
     pair = CurrencyPair(currency)
     jpy_pair: bool = pair.jpy_pair
 
@@ -46,20 +44,22 @@ if __name__ == '__main__':
 
     trader = Trader(currency_pair=pair,
                     strategy=strategy,
-                    freq=frequency,
-                    logger=logger)
+                    freq=frequency)
 
     initialize_schedule(trader, frequency)
+    logger.info('trader and schedule initialized. starting trading...')
 
     while True:
 
+        # noinspection PyBroadException
         try:
             schedule.run_pending()
+            trader.update_trader()
 
             if len(schedule.jobs) == 0:
                 logger.info('trading week finished. terminating')
                 trader.terminate()
-                sys.exit(0)
+                break
 
         except:
             logger.exception('trader unexpectedly raised an error. shutting down.')
@@ -67,5 +67,5 @@ if __name__ == '__main__':
             sys.exit(1)
 
         finally:
-            time.sleep(1)
+            time.sleep(0.1)
             gc.collect()

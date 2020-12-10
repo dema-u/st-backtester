@@ -33,12 +33,6 @@ def mocked_connection():
 
 
 @pytest.fixture
-def mocked_logger():
-    logger_mock = Mock(name='Logger Mock')
-    return logger_mock
-
-
-@pytest.fixture
 def mocked_fxcm_order():
 
     order_mock = Mock(name='Order Mock')
@@ -49,25 +43,25 @@ def mocked_fxcm_order():
 
 
 @pytest.fixture
-def mocked_broker(mocked_connection, mocked_logger):
+def mocked_broker(mocked_connection):
 
     pair = CurrencyPair('EURUSD')
     freq = 'm1'
 
     with patch('trader.broker._initialize_connection', return_value=mocked_connection):
-        broker = Broker(pair, freq, mocked_logger)
+        broker = Broker(pair, freq)
 
     return broker
 
 
 @pytest.fixture
-def mocked_trader(mocked_broker, mocked_logger, strategy):
+def mocked_trader(mocked_broker, strategy):
 
     pair = CurrencyPair('EURUSD')
     freq = 'm1'
 
     with patch('trader.broker.Broker', return_value=mocked_broker):
-        trader = Trader(currency_pair=pair, strategy=strategy, freq=freq, logger=mocked_logger)
+        trader = Trader(currency_pair=pair, strategy=strategy, freq=freq)
 
     return trader
 

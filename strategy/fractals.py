@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from utils import Pips, CurrencyPair
-from typing import Optional, Tuple, Any, List
+from typing import Optional, Tuple, Any
 
 
 class FractalStrategy:

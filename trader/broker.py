@@ -1,8 +1,15 @@
 import fxcmpy
 import datetime
 from utils import CurrencyPair, ConfigHandler
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 from trader.orders import Order, FXCMOrder
+from utils import LoggerHandler
+
+
+logger_helper = LoggerHandler(__name__, "INFO")
+logger_helper.add_stream_handler()
+logger_helper.add_path_handler()
+logger = logger_helper.logger
 
 
 RENAMER = {'bidopen': 'BidOpen', 'bidhigh': 'BidHigh', 'bidlow': 'BidLow', 'bidclose': 'BidClose',
@@ -37,18 +44,16 @@ def check_connection(function_):
 
 class Broker:
 
-    def __init__(self, pair: CurrencyPair, freq: str, logger):
+    def __init__(self, pair: CurrencyPair, freq: str):
 
         self._pair = pair
         self._freq = freq
 
         self._connection = _initialize_connection()
 
-        self.logger = logger
-
     @check_connection
-    def add_callback(self, function_):
-        self._connection.subscribe_market_data(self._pair.fxcm_name, (function_,))
+    def subscribe_data(self):
+        self._connection.subscribe_market_data(self._pair.fxcm_name)
 
     @check_connection
     def place_entry_order(self,
@@ -62,7 +67,7 @@ class Broker:
 
         if replace:
             if len(self.orders) > 1:
-                self.logger.critical('Ambiguous as to which order to pick. Cancelling all and re-adding.')
+                logger.critical('Ambiguous as to which order to pick. Cancelling all and re-adding.')
                 self.cancel_all_orders()
             elif len(self.orders) == 1:
                 fxcm_order = self.orders[0]

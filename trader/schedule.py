@@ -8,9 +8,9 @@ class ScheduleHelper:
     day_map = {'Sunday': 1, 'Monday': 2, 'Tuesday': 3, 'Wednesday': 4, 'Thursday': 5, 'Friday': 6, 'Saturday': 7}
     freq_map = {'m1': 1, 'm5': 5}
 
-    START_TIME = '00:00'
-    END_TIME = '23:59'
-    END_TIME_FRI = '19:59'
+    START_TIME = '05:59'
+    END_TIME = '17:59'
+    END_TIME_FRI = '17:59'
 
     def __init__(self, time_now, frequency):
 
@@ -27,7 +27,7 @@ class ScheduleHelper:
             end_time = self.END_TIME
 
         if self.week_number_now < ScheduleHelper.day_map[day]:
-            return self.get_time_intervals(self.START_TIME, end_time)
+            return []
 
         elif self.week_number_now == ScheduleHelper.day_map[day]:
             next_time = self._time_now - datetime.timedelta(minutes=(self._time_now.minute % self.freq_map[self._frequency]),
@@ -42,13 +42,16 @@ class ScheduleHelper:
     def get_time_intervals(self, start: str, end: str) -> List[str]:
         all_times = []
 
+        allowed_start_time = datetime.datetime.strptime(self.START_TIME, "%H:%M")
+
         start = datetime.datetime.strptime(start, "%H:%M")
         end = datetime.datetime.strptime(end, "%H:%M")
 
         t = start
 
         while t <= end:
-            all_times.append(t.strftime("%H:%M"))
+            if allowed_start_time < t:
+                all_times.append(t.strftime("%H:%M"))
             t += datetime.timedelta(minutes=self.freq_map[self._frequency])
 
         return all_times

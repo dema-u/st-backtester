@@ -1,3 +1,10 @@
+from utils import LoggerHandler
+
+
+logger_helper = LoggerHandler(__name__, "INFO")
+logger_helper.add_stream_handler()
+logger_helper.add_path_handler()
+logger = logger_helper.logger
 
 
 class FXCMPosition:
