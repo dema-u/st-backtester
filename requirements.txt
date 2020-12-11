@@ -4,4 +4,5 @@ schedule~=0.6.0
 fxcmpy~=1.2.6
 numpy~=1.18.1
 joblib~=0.14.1
-python-socketio
+python-socketio~=4.4.0
+socketIO-client~=0.7.2

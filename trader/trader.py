@@ -39,8 +39,8 @@ class Trader:
         self.position = None
         self.callback_lock = False
 
-        self.broker.cancel_all_orders()
-        self.broker.cancel_all_positions()
+        self.cancel_all_orders()
+        self.cancel_all_positions()
 
         self.broker.subscribe_data()
 
@@ -63,9 +63,10 @@ class Trader:
                 self.place_backward_order()
         elif self.broker.num_positions == 1 and self.position is None:
             logger.warning(f'position is None but self.broker.num_positions == 1')
+            self.cancel_all_positions()
         else:
             logger.critical(f'multiple positions {self.broker.open_position_ids} found, cancelling')
-            self.broker.cancel_all_positions()
+            self.cancel_all_positions()
 
         lock.release()
 

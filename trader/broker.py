@@ -15,7 +15,9 @@ logger = logger_helper.logger
 RENAMER = {'bidopen': 'BidOpen', 'bidhigh': 'BidHigh', 'bidlow': 'BidLow', 'bidclose': 'BidClose',
            'askopen': 'AskOpen', 'askhigh': 'AskHigh', 'asklow': 'AskLow', 'askclose': 'AskClose'}
 
+
 COLUMNS = list(RENAMER.values())
+
 
 FREQ_MAP = {'m1': 1, 'm5': 5}
 
@@ -27,6 +29,8 @@ def _initialize_connection():
     access_token = fxcm_section['access_token']
     log_file = fxcm_section['log_file']
     log_level = fxcm_section['log_level']
+
+    logger.info(f'initializing with {access_token} {log_file} {log_level}')
 
     connection = fxcmpy.fxcmpy(access_token=access_token, log_file=log_file, log_level=log_level)
 
@@ -65,34 +69,21 @@ class Broker:
         tp = round(order.tp, self._pair.price_precision)
         sl = round(order.sl, self._pair.price_precision)
 
-        if replace:
-            if len(self.orders) > 1:
-                logger.critical('Ambiguous as to which order to pick. Cancelling all and re-adding.')
-                self.cancel_all_orders()
-            elif len(self.orders) == 1:
-                fxcm_order = self.orders[0]
-
-                order_long = fxcm_order.get_isBuy()
-                order_tp = fxcm_order.get_limit()
-                order_sl = fxcm_order.get_stop()
-
-                if order_long == is_long and order_tp == tp and order_sl == sl:
-                    return None
-                else:
-                    fxcm_order.delete()
-        else:
+        if not replace:
             raise NotImplementedError
+        else:
+            self.cancel_all_orders()
 
-        entry_order = self._connection.create_entry_order(symbol=self._pair.fxcm_name,
-                                                          is_buy=is_long,
-                                                          limit=tp,
-                                                          rate=entry,
-                                                          stop=sl,
-                                                          amount=order.size,
-                                                          time_in_force='GTC',
-                                                          is_in_pips=False)
+            entry_order = self._connection.create_entry_order(symbol=self._pair.fxcm_name,
+                                                              is_buy=is_long,
+                                                              limit=tp,
+                                                              rate=entry,
+                                                              stop=sl,
+                                                              amount=order.size,
+                                                              time_in_force='GTC',
+                                                              is_in_pips=False)
 
-        return order.get_fxcm_order(broker=self, order=entry_order)
+            return order.get_fxcm_order(broker=self, order=entry_order)
 
     @check_connection
     def place_oco_order(self,

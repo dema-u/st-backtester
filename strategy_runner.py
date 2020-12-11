@@ -2,6 +2,7 @@ import schedule
 import time
 import gc
 import sys
+import fxcmpy
 from trader import Trader, initialize_schedule
 from strategy import FractalStrategy
 from utils import CurrencyPair, Pips

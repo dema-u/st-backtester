@@ -12,7 +12,7 @@ The repository and the trading bot follow the standard semantic versioning as ma
 <li><em>Patch</em> - patch release that signifies a small bug or similar</li>
 </ol>
 
-All releases that are under development and are not ready to be allocated real capital will have a ```dev``` flag for release.
+All releases that are ready to be deployed using real money and are not ready to be allocated real capital are to be labelled with ```real``` flag.
 
 ## Capital Allocation
 
