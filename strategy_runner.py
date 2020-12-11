@@ -69,3 +69,5 @@ if __name__ == '__main__':
         finally:
             time.sleep(0.1)
             gc.collect()
+
+    sys.exit(0)

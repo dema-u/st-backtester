@@ -81,7 +81,7 @@ class Broker:
                 else:
                     fxcm_order.delete()
         else:
-            self.cancel_all_orders()
+            raise NotImplementedError
 
         entry_order = self._connection.create_entry_order(symbol=self._pair.fxcm_name,
                                                           is_buy=is_long,

@@ -44,8 +44,6 @@ class Trader:
 
         self.broker.subscribe_data()
 
-        self.logger = logger
-
     def process_timestep(self):
 
         lock = threading.Lock()
@@ -56,15 +54,17 @@ class Trader:
         logger.info('cancelled all orders')
 
         if self.broker.num_positions == 0:
-            self.logger.info('no positions detected. placing oco order')
+            logger.info('no positions detected. placing oco order')
             self.place_starting_oco()
-        elif self.broker.num_positions == 1:
-            self.logger.info(f'{self.position.direction} position {self.position.id} in place, reached turn price: {self.position.is_back}')
+        elif self.broker.num_positions == 1 and self.position is not None:
+            logger.info(f'{self.position.direction} position {self.position.id} in place, reached turn price: {self.position.is_back}')
             if self.position.is_back:
-                self.logger.info('placing backward order. setting position stop loss to entry price')
+                logger.info('placing backward order. setting position stop loss to entry price')
                 self.place_backward_order()
+        elif self.broker.num_positions == 1 and self.position is None:
+            logger.warning(f'position is None but self.broker.num_positions == 1')
         else:
-            self.logger.critical(f'multiple positions {self.broker.open_position_ids} found, cancelling')
+            logger.critical(f'multiple positions {self.broker.open_position_ids} found, cancelling')
             self.broker.cancel_all_positions()
 
         lock.release()
@@ -86,8 +86,8 @@ class Trader:
 
             if entry_s < self.broker.latest_price < entry_l:
 
-                self.logger.info(f'fractals at {upper_fractal} and {lower_fractal} are between prices, placing oco.')
-                self.logger.info(f'upper fractal date: {upper_date}, lower fractal date: {lower_date}')
+                logger.info(f'fractals at {upper_fractal} and {lower_fractal} are between prices, placing oco.')
+                logger.info(f'upper fractal date: {upper_date}, lower fractal date: {lower_date}')
 
                 long_order = Order(self,
                                    is_long=True,
@@ -107,15 +107,15 @@ class Trader:
                 try:
                     _ = self.broker.place_oco_order(buy_order=long_order, sell_order=short_order, replace=True)
                 except IndexError:
-                    self.logger.error('Index error while placing oco, skipping timestep')
+                    logger.error('Index error while placing oco, skipping timestep')
                 except ValueError:
-                    self.logger.error('Value error while placing oco, skipping timestep')
+                    logger.error('Value error while placing oco, skipping timestep')
 
             else:
-                self.logger.info(f'fractals at {upper_fractal} and {lower_fractal} aren\'t between prices.')
+                logger.info(f'fractals at {upper_fractal} and {lower_fractal} aren\'t between prices.')
 
         else:
-            self.logger.info('no suitable fractals found for oco order, skipping timestep')
+            logger.info('no suitable fractals found for oco order, skipping timestep')
 
     def place_backward_order(self):
 
@@ -132,8 +132,8 @@ class Trader:
 
             size = self._strategy.get_position_size(self.broker.available_equity, entry_l, sl_l)
 
-            self.logger.info(f'fractals at {upper_fractal} and {lower_fractal} are between prices, placing oco.')
-            self.logger.info(f'upper fractal date: {upper_date}, lower fractal date: {lower_date}')
+            logger.info(f'fractals at {upper_fractal} and {lower_fractal} are between prices, placing oco.')
+            logger.info(f'upper fractal date: {upper_date}, lower fractal date: {lower_date}')
 
             if self.position.is_long:
 
@@ -151,12 +151,12 @@ class Trader:
                         _ = self.broker.place_entry_order(order=short_order, replace=True)
                         self.position.sl = entry_s + Pips(0.3, jpy_pair=self._pair.jpy_pair).price
                     except IndexError:
-                        self.logger.error('Index error while placing backward, skipping timestep')
+                        logger.error('Index error while placing backward, skipping timestep')
                     except ValueError:
-                        self.logger.error('Value error while placing backward, skipping timestep')
+                        logger.error('Value error while placing backward, skipping timestep')
 
                 else:
-                    self.logger.info('sl of long position is above entry, not adding order despite valid fractals.')
+                    logger.info('sl of long position is above entry, not adding order despite valid fractals.')
 
             else:
 
@@ -174,14 +174,14 @@ class Trader:
                         _ = self.broker.place_entry_order(order=long_order, replace=True)
                         self.position.sl = entry_l - Pips(0.3, jpy_pair=self._pair.jpy_pair).price
                     except IndexError:
-                        self.logger.error('Index error while placing backward, skipping timestep')
+                        logger.error('Index error while placing backward, skipping timestep')
                     except ValueError:
-                        self.logger.error('Value error while placing backward, skipping timestep')
+                        logger.error('Value error while placing backward, skipping timestep')
 
                 else:
-                    self.logger.info('sl of short position is below entry, not adding order despite of valid fractals.')
+                    logger.info('sl of short position is below entry, not adding order despite of valid fractals.')
         else:
-            self.logger.info('no suitable fractals found for backward order. skipping timestep')
+            logger.info('no suitable fractals found for backward order. skipping timestep')
 
     def cancel_all_orders(self):
         self.orders = []

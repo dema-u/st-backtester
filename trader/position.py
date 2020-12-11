@@ -20,10 +20,10 @@ class FXCMPosition:
         self._fxcm_position = fxcm_position
         self._id = fxcm_position.get_tradeId()
 
-        self._trader.logger.info(f'initializing position {self.id}')
+        logger.info(f'initializing position {self.id}')
 
         if self._trader.position is not None:
-            self._trader.logger.info(f'found pre-existing position {self._trader.position.id}, closing')
+            logger.info(f'found pre-existing position {self._trader.position.id}, closing')
             self._trader.position.close()
 
         self._open_price = self._fxcm_position.get_open()
@@ -35,12 +35,12 @@ class FXCMPosition:
 
         self._trader.position = self
 
-        self._trader.logger.info(f'{self.direction} position {self.id} initialized')
+        logger.info(f'{self.direction} position {self.id} initialized')
 
     def update(self, latest_price):
 
         if self.id not in self._broker.open_position_ids:
-            self._trader.logger.info(f'{self.direction} position {self.id} not found, removing position')
+            logger.info(f'{self.direction} position {self.id} not found, removing position')
             self._trader.position = None
 
         if self.is_long and latest_price > self._back_price and self._is_back == False:
@@ -49,7 +49,7 @@ class FXCMPosition:
             self.flag_back_price()
 
     def flag_back_price(self):
-        self._trader.logger.info(f'{self.direction} position {self.id} has reached back level of {self._back_price}')
+        logger.info(f'{self.direction} position {self.id} has reached back level of {self._back_price}')
         self._is_back = True
         self.sl = self.open_price
 
