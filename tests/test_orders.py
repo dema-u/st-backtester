@@ -1,6 +1,3 @@
-from unittest.mock import Mock
-from trader import Order
-import pytest
 
 
 def test_order_init(simple_order):
