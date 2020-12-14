@@ -30,8 +30,6 @@ def _initialize_connection():
     log_file = fxcm_section['log_file']
     log_level = fxcm_section['log_level']
 
-    logger.info(f'initializing with {access_token} {log_file} {log_level}')
-
     connection = fxcmpy.fxcmpy(access_token=access_token, log_file=log_file, log_level=log_level)
 
     return connection

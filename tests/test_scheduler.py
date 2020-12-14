@@ -22,7 +22,7 @@ def test_monday_5m():
     helper = ScheduleHelper(dt, freq)
 
     assert helper.monday[0] == '11:25'
-    assert helper.monday[-1] == '17:55'
+    assert helper.monday[-1] == '19:55'
 
 
 def test_monday_1m():
@@ -32,7 +32,7 @@ def test_monday_1m():
     helper = ScheduleHelper(dt, freq)
 
     assert helper.monday[0] == '17:24'
-    assert helper.monday[-1] == '17:59'
+    assert helper.monday[-1] == helper.END_TIME
     assert helper.tuesday == []
 
 
@@ -44,7 +44,7 @@ def test_tuesday_5m():
 
     assert helper.monday == []
     assert helper.tuesday[0] == '11:25'
-    assert helper.tuesday[-1] == '17:55'
+    assert helper.tuesday[-1] == '19:55'
     assert helper.wednesday == []
 
 
@@ -54,8 +54,8 @@ def test_tuesday_1m():
 
     helper = ScheduleHelper(dt, freq)
 
-    assert helper.tuesday[0] == '06:00'
-    assert helper.tuesday[-1] == '17:59'
+    assert helper.tuesday[0] == '07:00'
+    assert helper.tuesday[-1] == helper.END_TIME
     assert helper.monday == []
     assert helper.friday == []
 
@@ -68,7 +68,7 @@ def test_friday_5m():
 
     assert helper.thursday == []
     assert helper.friday[0] == '15:05'
-    assert helper.friday[-1] == '17:55'
+    assert helper.friday[-1] == '19:55'
 
 
 def test_friday_1m():

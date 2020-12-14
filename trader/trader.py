@@ -209,4 +209,5 @@ class Trader:
 
     def terminate(self):
         self.broker.cancel_all_orders()
+        self.broker.cancel_all_positions()
         self.broker.close_connection()

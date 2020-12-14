@@ -28,56 +28,49 @@ class StrategyRunner:
 
             historical_prices = self.broker.get_historical_prices(history_len=120)
 
-            if 7 < self.broker.current_time.hour < 18:
+            if len(self.broker.open_positions) == 0 and len(self.broker.open_orders) == 0:
+                position_lock = False
+                upper_fractal, lower_fractal = self.corridor.get_fractals(historical_prices)
+                if upper_fractal is not None and lower_fractal is not None:
+                    self._place_starting_orders(upper_fractal, lower_fractal)
 
-                current_prices = self.broker.current_prices
+            elif len(self.broker.open_positions) == 0 and len(self.broker.open_orders) == 2:
+                position_lock = False
+                upper_fractal, lower_fractal = self.corridor.get_fractals(historical_prices)
+                if upper_fractal is not None and lower_fractal is not None:
+                    self._place_starting_orders(upper_fractal, lower_fractal)
 
-                #   print(self.broker.equity, len(self.broker.orders), len(self.broker.positions), self.broker.current_time)
-                #   print('midprice: ', (current_prices['BidClose'] + current_prices['AskClose'])/2)
+            elif len(self.broker.open_positions) == 1 and len(self.broker.open_orders) == 1 and (not position_lock):
+                position_lock = True
+                for order in self.broker.open_orders:
+                    order.cancel()
 
-                if len(self.broker.open_positions) == 0 and len(self.broker.open_orders) == 0:
-                    position_lock = False
+            elif len(self.broker.open_positions) == 1 and len(self.broker.open_orders) == 1 and position_lock:
+                upper_fractal, lower_fractal = self.corridor.get_fractals(historical_prices)
+                if upper_fractal is not None and lower_fractal is not None:
+                    self._place_opposite_order(upper_fractal, lower_fractal)
+
+            elif len(self.broker.open_positions) == 1 and len(self.broker.open_orders) == 0:
+                if self.broker.positions[0].isback:
+
                     upper_fractal, lower_fractal = self.corridor.get_fractals(historical_prices)
-                    if upper_fractal is not None and lower_fractal is not None:
-                        self._place_starting_orders(upper_fractal, lower_fractal)
+                    position = self.broker.positions[0]
 
-                elif len(self.broker.open_positions) == 0 and len(self.broker.open_orders) == 2:
-                    position_lock = False
-                    upper_fractal, lower_fractal = self.corridor.get_fractals(historical_prices)
-                    if upper_fractal is not None and lower_fractal is not None:
-                        self._place_starting_orders(upper_fractal, lower_fractal)
+                    position.sl = position.entry_price
 
-                elif len(self.broker.open_positions) == 1 and len(self.broker.open_orders) == 1 and (not position_lock):
-                    position_lock = True
-                    for order in self.broker.open_orders:
-                        order.cancel()
-
-                elif len(self.broker.open_positions) == 1 and len(self.broker.open_orders) == 1 and position_lock:
-                    upper_fractal, lower_fractal = self.corridor.get_fractals(historical_prices)
                     if upper_fractal is not None and lower_fractal is not None:
                         self._place_opposite_order(upper_fractal, lower_fractal)
 
-                elif len(self.broker.open_positions) == 1 and len(self.broker.open_orders) == 0:
-                    if self.broker.positions[0].isback:
+            elif len(self.broker.orders) == 1 and len(self.broker.positions) == 0:
+                for order in self.broker.open_orders:
+                    order.cancel()
 
-                        upper_fractal, lower_fractal = self.corridor.get_fractals(historical_prices)
-                        position = self.broker.positions[0]
+            elif len(self.broker.positions) == 2:
+                for position in self.broker.open_positions:
+                    position.close()
 
-                        position.sl = position.entry_price
-
-                        if upper_fractal is not None and lower_fractal is not None:
-                            self._place_opposite_order(upper_fractal, lower_fractal)
-
-                elif len(self.broker.orders) == 1 and len(self.broker.positions) == 0:
-                    for order in self.broker.open_orders:
-                        order.cancel()
-
-                elif len(self.broker.positions) == 2:
-                    for position in self.broker.open_positions:
-                        position.close()
-
-                else:
-                    print(f"Case not covered. Orders: {len(self.broker.orders)}, Positions: {len(self.broker.positions)}")
+            else:
+                print(f"Case not covered. Orders: {len(self.broker.orders)}, Positions: {len(self.broker.positions)}")
 
             self.broker.next()
 
@@ -170,7 +163,7 @@ def run_backtest(_year, _week, _strategy, _broker):
 
 if __name__ == '__main__':
 
-    pair = CurrencyPair('GBPUSD')
+    pair = CurrencyPair('AUDUSD')
     jpy_pair: bool = pair.jpy_pair
     freq = 'm1'
     year = 2020
@@ -194,7 +187,8 @@ if __name__ == '__main__':
 
     backtest_start_time = default_timer()
 
-    strategy = FractalStrategy(target_level=target_level,
+    strategy = FractalStrategy(currency_pair=pair,
+                               target_level=target_level,
                                back_level=back_level,
                                break_level=break_level,
                                sl_extension=sl_extension,

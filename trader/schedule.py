@@ -8,9 +8,9 @@ class ScheduleHelper:
     day_map = {'Sunday': 1, 'Monday': 2, 'Tuesday': 3, 'Wednesday': 4, 'Thursday': 5, 'Friday': 6, 'Saturday': 7}
     freq_map = {'m1': 1, 'm5': 5}
 
-    START_TIME = '05:59'
-    END_TIME = '17:59'
-    END_TIME_FRI = '17:59'
+    START_TIME = '06:59'
+    END_TIME = '19:59'
+    END_TIME_FRI = '19:59'
 
     def __init__(self, time_now, frequency):
 
