@@ -1,6 +1,6 @@
 import utils
 import pandas as pd
-from structs import CurrencyPair
+from utils.structs import CurrencyPair
 
 try:
     from tqdm import tqdm

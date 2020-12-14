@@ -3,7 +3,7 @@ pandas~=0.25.3
 schedule~=0.6.0
 fxcmpy~=1.2.6
 numpy~=1.18.1
-configparser~=4.0.2
-tqdm~=4.41.0
 joblib~=0.14.1
-python-socketio
+python-engineio~=3.14.1
+python-socketio~=4.6.1
+socketIO-client~=0.7.2

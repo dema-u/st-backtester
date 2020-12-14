@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import configparser
 import logging
-from structs import CurrencyPair
+from utils.structs import CurrencyPair
 from typing import Tuple, List, Optional
 
 
@@ -16,7 +16,6 @@ class DataManager:
 
     @staticmethod
     def create_paths(base_data_path):
-        os.mkdir(base_data_path)
         os.mkdir(os.path.join(base_data_path, DataManager._RAW_FOLDER))
         os.mkdir(os.path.join(base_data_path, DataManager._CLEAN_FOLDER))
         os.mkdir(os.path.join(base_data_path, DataManager._RAW_FOLDER, DataManager._PRICES_FOLDER))
@@ -24,7 +23,7 @@ class DataManager:
 
     @staticmethod
     def store_price_data(data: pd.DataFrame, ticker: str, freq: str, raw: bool) -> None:
-        base_data_path = os.path.abspath(DataManager._DATA_FOLDER)
+        base_data_path = os.path.join(os.path.dirname(__file__), '..', DataManager._DATA_FOLDER)
 
         if not os.path.exists(base_data_path):
             DataManager.create_paths(base_data_path)
@@ -45,7 +44,7 @@ class DataManager:
 
     @staticmethod
     def read_price_data(ticker: str, freq: str, raw: bool = False) -> pd.DataFrame:
-        base_data_path = os.path.abspath(DataManager._DATA_FOLDER)
+        base_data_path = os.path.join(os.path.dirname(__file__), '..', DataManager._DATA_FOLDER)
         ticker_file = ticker + '.csv'
 
         if raw:
@@ -99,8 +98,8 @@ class DataHandler:
 
 
 class ConfigHandler:
-    prod_path = os.path.abspath('configs/settings.prod.ini')
-    dev_path = os.path.abspath('configs/settings.dev.ini')
+    prod_path = os.path.join(os.path.dirname(__file__), '../configs/settings.prod.ini')
+    dev_path = os.path.join(os.path.dirname(__file__), '../configs/settings.dev.ini')
 
     def __init__(self):
 
@@ -125,7 +124,7 @@ class ConfigHandler:
 
 
 class LoggerHandler:
-    filepath_log = os.path.abspath('logs/trader.log')
+    filepath_log = os.path.join(os.path.dirname(__file__), '../logs/trader.log')
     logging_format = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
     def __init__(self, name: Optional[str] = None, log_level='INFO'):

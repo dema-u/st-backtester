@@ -1,7 +1,7 @@
 import pandas as pd
 import fxcmpy
 import utils
-from structs import CurrencyPair
+from utils.structs import CurrencyPair
 from datetime import datetime
 
 try:
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     log_file = fxcm_section['log_file']
     log_level = fxcm_section['log_level']
 
-    api_con = fxcmpy.fxcmpy(access_token=access_token, log_file=log_file, log_level=log_level)
+    api_con = fxcmpy.fxcmpy(access_token=access_token, log_level=log_level)
 
     all_tickers = [CurrencyPair(ticker) for ticker in data_section['tickers'].split(',')]
     all_freqs = data_section['frequency'].split(',')

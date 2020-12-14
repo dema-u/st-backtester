@@ -1,62 +1,66 @@
-import os
-import pytest
-import pandas as pd
-from backtester.backtester import Broker
 
 
-@pytest.fixture
-def broker():
-    file_path = os.path.abspath('test_data/EURUSD-SAMPLE.csv')
-    data = pd.read_csv(file_path, index_col=0, parse_dates=True)
-    return Broker(data)
+def test_order_init(simple_order):
+
+    is_long = True
+    entry = 1.0
+    tp = 2.0
+    sl = 0.5
+    size = 5
+    back_price = 1.5
+
+    assert simple_order.is_long == is_long
+    assert simple_order.size == size
+    assert simple_order.entry == entry
+    assert simple_order.tp == tp
+    assert simple_order.sl == sl
+    assert simple_order.back_price == back_price
 
 
-def test_market_order_insertion(broker):
-    broker.open_market_order(is_long=True,
-                             tp=1.0,
-                             sl=0.1,
-                             size=1)
+def test_fxcm_order_init(simple_order, mocked_broker, mocked_fxcm_order):
 
-    orders = broker.orders
-    order = orders[0]
-
-    assert len(broker.orders) == 1
-
-    assert order.tp == 1.0
-    assert order.sl == 0.1
-    assert order._size == 1
+    full_order = simple_order.get_fxcm_order(broker=mocked_broker, order=mocked_fxcm_order)
+    assert full_order is not None
 
 
-def test_entry_order_insertion(broker):
-    broker.open_entry_order(is_long=True,
-                            limit=None,
-                            stop=0.3,
-                            tp=1.0,
-                            sl=0.1,
-                            size=1)
+def test_fxcm_order_insertion(simple_order, mocked_broker, mocked_fxcm_order):
 
-    orders = broker.orders
-    order = orders[0]
-
-    assert len(broker.orders) == 1
-
-    assert order.limit is None
-    assert order.stop == 0.3
-    assert order.tp == 1.0
-    assert order.sl == 0.1
-    assert order._size == 1
+    full_order = simple_order.get_fxcm_order(broker=mocked_broker, order=mocked_fxcm_order)
+    assert full_order in full_order._trader.orders
 
 
-def test_entry_order_cancellation(broker):
-    broker.open_entry_order(is_long=True,
-                            limit=None,
-                            stop=0.3,
-                            tp=1.0,
-                            sl=0.1,
-                            size=1)
+def test_fxcm_order_simple_update(simple_order, mocked_broker, mocked_fxcm_order):
 
-    orders = broker.orders
-    order = orders[0]
-    order.cancel()
+    full_order = simple_order.get_fxcm_order(broker=mocked_broker, order=mocked_fxcm_order)
 
-    assert len(broker.orders) == 0
+    assert len(full_order._trader.orders) == 1
+
+    full_order.update()
+
+
+def test_fxcm_order_cancellation(simple_order, mocked_broker, mocked_fxcm_order):
+
+    mocked_fxcm_order.get_status.return_value = 'Canceled'
+
+    full_order = simple_order.get_fxcm_order(broker=mocked_broker, order=mocked_fxcm_order)
+
+    assert len(full_order._trader.orders) == 1
+
+    full_order.update()
+
+    assert len(full_order._trader.orders) == 0
+
+
+def test_fxcm_order_position(simple_order, mocked_broker, mocked_fxcm_order, mocked_fxcm_position):
+
+    mocked_fxcm_order.get_status.return_value = 'Executing'
+    mocked_fxcm_order.get_associated_trade.return_value = mocked_fxcm_position
+
+    full_order = simple_order.get_fxcm_order(broker=mocked_broker, order=mocked_fxcm_order)
+
+    assert len(full_order._trader.orders) == 1
+
+    full_order.update()
+
+    assert len(full_order._trader.orders) == 0
+    assert full_order._trader.position is not None
