@@ -38,6 +38,7 @@ def _initialize_connection():
 def check_connection(function_):
     def _check_connection(*args, **kwargs):
         if not args[0]._connection.is_connected():
+            logger.warning('Not connected, trying to connect')
             args[0]._connection.connect()
         return function_(*args, **kwargs)
 
@@ -56,6 +57,8 @@ class Broker:
     @check_connection
     def subscribe_data(self):
         self._connection.subscribe_market_data(self._pair.fxcm_name)
+        self._connection.set_max_prices(100)
+        logger.info(self._connection.get_max_prices())
 
     @check_connection
     def place_entry_order(self,

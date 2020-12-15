@@ -46,9 +46,6 @@ class Trader:
 
     def process_timestep(self):
 
-        lock = threading.Lock()
-        lock.acquire()
-
         self._process_prices(self.broker.latest_price)
         self.cancel_all_orders()
         logger.info('cancelled all orders')
@@ -67,8 +64,6 @@ class Trader:
         else:
             logger.critical(f'multiple positions {self.broker.open_position_ids} found, cancelling')
             self.cancel_all_positions()
-
-        lock.release()
 
         return schedule.CancelJob
 

@@ -81,5 +81,5 @@ def test_friday_1m():
     assert helper.tuesday == []
     assert helper.wednesday == []
     assert helper.thursday == []
-    assert helper.friday[0] == '06:00'
-    assert helper.friday[-1] == '17:59'
+    assert helper.friday[0] == '07:00'
+    assert helper.friday[-1] == helper.END_TIME_FRI

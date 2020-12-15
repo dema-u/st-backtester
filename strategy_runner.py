@@ -6,13 +6,13 @@ from trader import Trader, initialize_schedule
 from strategy import FractalStrategy
 from utils import CurrencyPair, Pips
 from utils import ConfigHandler, LoggerHandler
+from pympler.tracker import SummaryTracker, summary, muppy
 
 
 logger_helper = LoggerHandler(__name__, "INFO")
 logger_helper.add_stream_handler()
 logger_helper.add_path_handler()
 logger = logger_helper.logger
-
 
 if __name__ == '__main__':
 
@@ -47,6 +47,9 @@ if __name__ == '__main__':
                     freq=frequency)
 
     initialize_schedule(trader, frequency)
+
+    tracker = SummaryTracker()
+
     logger.info(f'trader and schedule initialized. trading {currency} on {frequency} frequency...')
 
     while True:
@@ -57,7 +60,7 @@ if __name__ == '__main__':
             trader.update_trader()
 
             if len(schedule.jobs) == 0:
-                logger.info('trading week finished. terminating')
+                logger.info('trading day finished. terminating')
                 trader.terminate()
                 break
 
@@ -67,7 +70,7 @@ if __name__ == '__main__':
             sys.exit(1)
 
         finally:
-            time.sleep(0.1)
+            time.sleep(0.5)
             gc.collect()
 
     sys.exit(0)
