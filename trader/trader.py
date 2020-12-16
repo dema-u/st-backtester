@@ -46,9 +46,9 @@ class Trader:
 
     def process_timestep(self):
 
-        self._process_prices(self.broker.latest_price)
         self.cancel_all_orders()
         logger.info('cancelled all orders')
+        self._process_prices(self.broker.latest_price)
 
         if self.broker.num_positions == 0:
             logger.info('no positions detected. placing oco order')
@@ -103,9 +103,9 @@ class Trader:
                 try:
                     _ = self.broker.place_oco_order(buy_order=long_order, sell_order=short_order, replace=True)
                 except IndexError:
-                    logger.error('Index error while placing oco, skipping timestep')
+                    logger.exception('Index error while placing oco, skipping timestep')
                 except ValueError:
-                    logger.error('Value error while placing oco, skipping timestep')
+                    logger.exception('Value error while placing oco, skipping timestep')
 
             else:
                 logger.info(f'fractals at {upper_fractal} and {lower_fractal} aren\'t between prices.')
@@ -147,9 +147,9 @@ class Trader:
                         _ = self.broker.place_entry_order(order=short_order, replace=True)
                         self.position.sl = entry_s + Pips(0.3, jpy_pair=self._pair.jpy_pair).price
                     except IndexError:
-                        logger.error('Index error while placing backward, skipping timestep')
+                        logger.exception('Index error while placing backward, skipping timestep')
                     except ValueError:
-                        logger.error('Value error while placing backward, skipping timestep')
+                        logger.exception('Value error while placing backward, skipping timestep')
 
                 else:
                     logger.info('sl of long position is above entry, not adding order despite valid fractals.')

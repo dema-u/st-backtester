@@ -7,4 +7,3 @@ joblib~=0.14.1
 python-engineio~=3.14.1
 python-socketio~=4.6.1
 socketIO-client~=0.7.2
-pympler

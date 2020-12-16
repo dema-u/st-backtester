@@ -58,7 +58,6 @@ class Broker:
     def subscribe_data(self):
         self._connection.subscribe_market_data(self._pair.fxcm_name)
         self._connection.set_max_prices(100)
-        logger.info(self._connection.get_max_prices())
 
     @check_connection
     def place_entry_order(self,

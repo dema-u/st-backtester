@@ -1,0 +1,1 @@
+az container create --resource-group fxcm-trader --name trader --file

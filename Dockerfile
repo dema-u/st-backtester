@@ -1,4 +1,4 @@
-FROM python:3.7-slim-buster
+FROM python:3.6.12-slim-buster
 
 RUN mkdir configs/
 RUN mkdir trader/

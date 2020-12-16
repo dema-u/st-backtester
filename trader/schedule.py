@@ -3,6 +3,21 @@ import schedule
 from typing import List
 
 
+class TraderController:
+
+    ORCHESTRATION_TIME = '20:30'
+
+    def __init__(self,
+                 start_time: str,
+                 end_time: str):
+
+        self._start_time = start_time
+        self._end_time = end_time
+
+    def get_action(self):
+        pass
+
+
 class ScheduleHelper:
 
     day_map = {'Sunday': 1, 'Monday': 2, 'Tuesday': 3, 'Wednesday': 4, 'Thursday': 5, 'Friday': 6, 'Saturday': 7}
@@ -11,6 +26,8 @@ class ScheduleHelper:
     START_TIME = '06:59'
     END_TIME = '19:59'
     END_TIME_FRI = '19:59'
+
+    ORCHESTRATION_TIME = '20:30'
 
     def __init__(self, time_now, frequency):
 

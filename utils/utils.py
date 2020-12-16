@@ -110,6 +110,14 @@ class ConfigHandler:
         else:
             self._config.read(self.prod_path)
 
+    def get_trader_settings(self, currency, frequency):
+        path = os.path.join(os.path.dirname(__file__), f'../configs/parameters/{frequency}/{currency}.ini')
+        if not os.path.exists(path):
+            raise AttributeError(f'No parameters for {currency} ({frequency}) trading regime.')
+        else:
+            self._config.read(path)
+            return self._config['TRADER']
+
     @property
     def fxcm_settings(self):
         return self._config['FXCM']
@@ -117,10 +125,6 @@ class ConfigHandler:
     @property
     def data_settings(self):
         return self._config['DATA']
-
-    @property
-    def trader_settings(self):
-        return self._config['TRADER']
 
 
 class LoggerHandler:
