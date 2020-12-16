@@ -9,7 +9,7 @@ from utils import CurrencyPair, Pips
 from utils import ConfigHandler, LoggerHandler
 
 
-DEFAULT_CURRENCY = 'AUDJPY'
+DEFAULT_CURRENCY = 'EURUSD'
 DEFAULT_FREQUENCY = 'm1'
 
 

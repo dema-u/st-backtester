@@ -9,8 +9,8 @@ RUN mkdir utils/
 ADD trader trader/
 ADD utils utils/
 ADD strategy strategy/
+ADD configs configs/
 COPY strategy_runner.py ./
-COPY configs/settings.prod.ini configs/
 
 COPY requirements.txt ./
 RUN pip install -r requirements.txt
