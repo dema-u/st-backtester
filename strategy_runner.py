@@ -43,42 +43,42 @@ if __name__ == '__main__':
     pair = CurrencyPair(currency)
     jpy_pair: bool = pair.jpy_pair
 
-    # strategy = FractalStrategy(currency_pair=pair,
-    #                            target_level=target_level,
-    #                            back_level=back_level,
-    #                            break_level=Pips(break_level, jpy_pair),
-    #                            sl_extension=Pips(sl_extension, jpy_pair),
-    #                            max_width=Pips(max_width, jpy_pair),
-    #                            min_width=Pips(min_width, jpy_pair),
-    #                            risk=risk)
-    #
-    # trader = Trader(currency_pair=pair,
-    #                 strategy=strategy,
-    #                 freq=frequency)
-    #
-    # initialize_schedule(trader, frequency)
-    #
-    # logger.info(f'trader and schedule initialized. trading {currency} on {frequency} frequency...')
-    #
-    # while True:
-    #
-    #     # noinspection PyBroadException
-    #     try:
-    #         schedule.run_pending()
-    #         trader.update_trader()
-    #
-    #         if len(schedule.jobs) == 0:
-    #             logger.info('trading day finished. terminating')
-    #             trader.terminate()
-    #             break
-    #
-    #     except:
-    #         logger.exception('trader unexpectedly raised an error. shutting down.')
-    #         trader.terminate()
-    #         sys.exit(1)
-    #
-    #     finally:
-    #         time.sleep(1)
-    #         gc.collect()
-    #
-    # sys.exit(0)
+    strategy = FractalStrategy(currency_pair=pair,
+                               target_level=target_level,
+                               back_level=back_level,
+                               break_level=Pips(break_level, jpy_pair),
+                               sl_extension=Pips(sl_extension, jpy_pair),
+                               max_width=Pips(max_width, jpy_pair),
+                               min_width=Pips(min_width, jpy_pair),
+                               risk=risk)
+
+    trader = Trader(currency_pair=pair,
+                    strategy=strategy,
+                    freq=frequency)
+
+    initialize_schedule(trader, frequency)
+
+    logger.info(f'trader and schedule initialized. trading {currency} on {frequency} frequency...')
+
+    while True:
+
+        # noinspection PyBroadException
+        try:
+            schedule.run_pending()
+            trader.update_trader()
+
+            if len(schedule.jobs) == 0:
+                logger.info('trading day finished. terminating')
+                trader.terminate()
+                break
+
+        except:
+            logger.exception('trader unexpectedly raised an error. shutting down.')
+            trader.terminate()
+            sys.exit(1)
+
+        finally:
+            time.sleep(1)
+            gc.collect()
+
+    sys.exit(0)

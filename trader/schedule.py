@@ -5,17 +5,38 @@ from typing import List
 
 class TraderController:
 
-    ORCHESTRATION_TIME = '20:30'
+    FREQ_MAP = {'m1': 1, 'm5': 5}
 
     def __init__(self,
+                 frequency: str,
                  start_time: str,
                  end_time: str):
 
-        self._start_time = start_time
-        self._end_time = end_time
+        self._frequency = frequency
+        self._start_time = datetime.datetime.strptime(start_time, '%H:%M')
+        self._end_time = datetime.datetime.strptime(end_time, '%H:%M')
+
+        self._events = []
+        self._weekday = datetime.datetime.utcnow().strftime('%A')
+
+        self._fill_events()
 
     def get_action(self):
         pass
+
+    def _fill_events(self):
+
+        time_now = datetime.datetime.utcnow()
+        start_date = time_now
+
+        while start_date.hour < self._start_time.hour:
+            start_date += datetime.timedelta(minutes=1)
+
+        start_date = datetime.datetime(year=start_date.year, month=start_date.month, day=start_date.day,
+                                       hour=start_date.hour, minute=0, second=0)
+
+        while start_date.minute < self._start_time.minute:
+            start_date += datetime.timedelta(minutes=1)
 
 
 class ScheduleHelper:
