@@ -1,4 +1,4 @@
-FROM python:3.6.12-slim-buster
+FROM python:3.6.12-buster
 
 RUN mkdir configs/
 RUN mkdir trader/
@@ -15,4 +15,5 @@ COPY strategy_runner.py ./
 COPY requirements.txt ./
 RUN pip install -r requirements.txt
 
-CMD ["python","strategy_runner.py"]
+CMD ["strategy_runner.py"]
+ENTRYPOINT ["python"]

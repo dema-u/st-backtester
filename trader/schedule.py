@@ -1,6 +1,7 @@
 import datetime
 import schedule
 from typing import List
+import queue
 
 
 class TraderController:
@@ -16,7 +17,7 @@ class TraderController:
         self._start_time = datetime.datetime.strptime(start_time, '%H:%M')
         self._end_time = datetime.datetime.strptime(end_time, '%H:%M')
 
-        self._events = []
+        self._events = queue.Queue()
         self._weekday = datetime.datetime.utcnow().strftime('%A')
 
         self._fill_events()
@@ -47,8 +48,6 @@ class ScheduleHelper:
     START_TIME = '06:59'
     END_TIME = '19:59'
     END_TIME_FRI = '19:59'
-
-    ORCHESTRATION_TIME = '20:30'
 
     def __init__(self, time_now, frequency):
 
