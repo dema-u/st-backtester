@@ -3,7 +3,7 @@ import time
 import gc
 import os
 import sys
-from trader import Trader, initialize_schedule
+from trader import Trader, TraderController, initialize_schedule
 from strategy import FractalStrategy
 from utils import CurrencyPair, Pips
 from utils import ConfigHandler, LoggerHandler
@@ -55,6 +55,10 @@ if __name__ == '__main__':
     trader = Trader(currency_pair=pair,
                     strategy=strategy,
                     freq=frequency)
+
+    controller = TraderController(frequency=frequency,
+                                  start_time=start_time,
+                                  end_time=end_time)
 
     initialize_schedule(trader, frequency)
 

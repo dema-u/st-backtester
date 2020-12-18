@@ -1,7 +1,7 @@
 import datetime
 import schedule
 from typing import List
-import queue
+from collections import deque
 
 
 class TraderController:
@@ -17,31 +17,53 @@ class TraderController:
         self._start_time = datetime.datetime.strptime(start_time, '%H:%M')
         self._end_time = datetime.datetime.strptime(end_time, '%H:%M')
 
-        self._events = queue.Queue()
-        self._weekday = datetime.datetime.utcnow().strftime('%A')
+        self._events = self.get_event_queue()
 
-        self._fill_events()
+    def get_action(self, time_now: datetime.datetime) -> str:
 
-    def get_action(self):
-        pass
+        if len(self._events) == 0:
+            return 'shutdown'
 
-    def _fill_events(self):
+        next_decision_time = self._events[0]
 
-        time_now = datetime.datetime.utcnow()
-        start_date = time_now
+        if next_decision_time < time_now:
+            _ = self._events.popleft()
+            return 'trade'
+        else:
+            return 'update'
 
-        while start_date.hour < self._start_time.hour:
-            start_date += datetime.timedelta(minutes=1)
+    def get_event_queue(self):
 
-        start_date = datetime.datetime(year=start_date.year, month=start_date.month, day=start_date.day,
-                                       hour=start_date.hour, minute=0, second=0)
+        event_queue = deque()
 
-        while start_date.minute < self._start_time.minute:
-            start_date += datetime.timedelta(minutes=1)
+        start_hour = self._end_time.hour
+        end_hour = self._end_time.hour
+
+        now_time = datetime.datetime.utcnow()
+        now_hour = now_time.hour
+
+        if start_hour < end_hour:
+            if start_hour > now_hour > end_hour:
+                return event_queue
+        elif start_hour > end_hour:
+            if end_hour < now_hour < start_hour:
+                return event_queue
+        else:
+            raise NotImplementedError
+
+        next_time = now_time - datetime.timedelta(
+            minutes=(now_time.minute % self.FREQ_MAP[self._frequency]),
+            seconds=now_time.second,
+            microseconds=now_time.microsecond) + datetime.timedelta(minutes=self.FREQ_MAP[self._frequency])
+
+        while next_time.hour != end_hour:
+            event_queue.append(next_time)
+            next_time += datetime.timedelta(minutes=self.FREQ_MAP[self._frequency])
+
+        return event_queue
 
 
 class ScheduleHelper:
-
     day_map = {'Sunday': 1, 'Monday': 2, 'Tuesday': 3, 'Wednesday': 4, 'Thursday': 5, 'Friday': 6, 'Saturday': 7}
     freq_map = {'m1': 1, 'm5': 5}
 
@@ -67,9 +89,10 @@ class ScheduleHelper:
             return []
 
         elif self.week_number_now == ScheduleHelper.day_map[day]:
-            next_time = self._time_now - datetime.timedelta(minutes=(self._time_now.minute % self.freq_map[self._frequency]),
-                                                            seconds=self._time_now.second,
-                                                            microseconds=self._time_now.microsecond)
+            next_time = self._time_now - datetime.timedelta(
+                minutes=(self._time_now.minute % self.freq_map[self._frequency]),
+                seconds=self._time_now.second,
+                microseconds=self._time_now.microsecond)
             next_time += datetime.timedelta(minutes=self.freq_map[self._frequency])
             return self.get_time_intervals(next_time.strftime('%H:%M'), end_time)
 
@@ -119,7 +142,6 @@ class ScheduleHelper:
 
 
 def initialize_schedule(_trader, frequency) -> None:
-
     now = datetime.datetime.utcnow()
 
     helper = ScheduleHelper(time_now=now, frequency=frequency)
