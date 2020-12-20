@@ -1,5 +1,21 @@
-from trader.schedule import ScheduleHelper
+import trader
+from trader.schedule import ScheduleHelper, TraderController
 from datetime import datetime
+from unittest.mock import Mock, patch
+
+
+@patch.object(trader.schedule, 'datetime', Mock(wraps=datetime))
+def test_day_controller():
+    trader.schedule.datetime.utcnow.return_value = datetime(2020, 1, 1, 7, 34, 5)
+    trade_controller = TraderController('m5', '07:00', '20:00')
+    print(trade_controller._events)
+
+
+@patch.object(trader.schedule, 'datetime', Mock(wraps=datetime))
+def test_night_controller():
+    trader.schedule.datetime.utcnow.return_value = datetime(2020, 1, 1, 22, 34, 5)
+    trade_controller = TraderController('m5', '22:00', '06:00')
+    print(trade_controller._events)
 
 
 def test_sunday():
