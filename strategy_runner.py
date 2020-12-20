@@ -1,9 +1,8 @@
-import schedule
 import time
 import gc
 import os
 import sys
-from trader import Trader, TraderController, initialize_schedule
+from trader import Trader, TraderController
 from strategy import FractalStrategy
 from utils import CurrencyPair, Pips
 from utils import ConfigHandler, LoggerHandler
@@ -60,18 +59,20 @@ if __name__ == '__main__':
                                   start_time=start_time,
                                   end_time=end_time)
 
-    initialize_schedule(trader, frequency)
-
     logger.info(f'trader and schedule initialized. trading {currency} on {frequency} frequency...')
 
     while True:
 
         # noinspection PyBroadException
         try:
-            schedule.run_pending()
-            trader.update_trader()
 
-            if len(schedule.jobs) == 0:
+            action = controller.get_action()
+
+            if action == 'trade':
+                trader.process_timestep()
+            elif action == 'update':
+                trader.update_trader()
+            elif action == 'shutdown':
                 logger.info('trading day finished. terminating')
                 trader.terminate()
                 break
