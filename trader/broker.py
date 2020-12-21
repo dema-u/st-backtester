@@ -54,12 +54,10 @@ class Broker:
 
         self._connection = _initialize_connection()
 
-    @check_connection
     def subscribe_data(self):
         self._connection.subscribe_market_data(self._pair.fxcm_name)
         self._connection.set_max_prices(100)
 
-    @check_connection
     def place_entry_order(self,
                           order: Order,
                           replace: bool) -> Optional[FXCMOrder]:
@@ -85,7 +83,6 @@ class Broker:
 
             return order.get_fxcm_order(broker=self, order=entry_order)
 
-    @check_connection
     def place_oco_order(self,
                         buy_order: Order,
                         sell_order: Order,
@@ -115,28 +112,23 @@ class Broker:
 
             return buy_fxcm_order, sell_fxcm_order
 
-    @check_connection
     def change_position_sl(self, id, new_sl):
         self._connection.change_trade_stop_limit(id, is_stop=True, rate=new_sl, is_in_pips=False)
 
-    @check_connection
     def cancel_all_positions(self):
         self._connection.close_all_for_symbol(self._pair.fxcm_name)
 
-    @check_connection
     def cancel_all_orders(self):
         for order_id in self._connection.get_order_ids():
             order = self._connection.get_order(order_id)
             order.delete()
 
     @property
-    @check_connection
     def latest_price(self):
         last_price = self._connection.get_last_price(self._pair.fxcm_name)
         return (last_price['Bid'] + last_price['Ask']) / 2
 
     @property
-    @check_connection
     def historical_price(self):
 
         historical_data = self._connection.get_candles(instrument=self._pair.fxcm_name,
@@ -154,7 +146,6 @@ class Broker:
         return historical_data[:closest]
 
     @property
-    @check_connection
     def open_position_ids(self):
         return self._connection.get_open_trade_ids()
 
@@ -163,31 +154,25 @@ class Broker:
         return self._connection.get_order_ids()
 
     @property
-    @check_connection
     def num_positions(self):
         return len(self.open_position_ids)
 
     @property
-    @check_connection
     def num_orders(self):
         return len(self.open_order_ids)
 
     @property
-    @check_connection
     def available_margin(self):
         return self._connection.get_accounts_summary()['usableMargin3'][0]
 
     @property
-    @check_connection
     def available_equity(self):
         return self._connection.get_accounts_summary()['equity'][0]
 
     @property
-    @check_connection
     def orders(self):
         return [self._connection.get_orders(id) for id in self._connection.get_order_ids()]
 
-    @check_connection
     def close_connection(self):
         self._connection.unsubscribe_market_data(self._pair.fxcm_name)
         self._connection.close()

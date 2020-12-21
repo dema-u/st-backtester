@@ -59,7 +59,7 @@ if __name__ == '__main__':
                                   start_time=start_time,
                                   end_time=end_time)
 
-    logger.info(f'trader and schedule initialized. trading {currency} on {frequency} frequency...')
+    logger.info(f'trader and controller initialized. trading {currency} on {frequency} frequency...')
 
     while True:
 
@@ -83,7 +83,7 @@ if __name__ == '__main__':
             sys.exit(1)
 
         finally:
-            time.sleep(1)
+            time.sleep(0.5)
             gc.collect()
 
     sys.exit(0)

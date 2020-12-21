@@ -10,11 +10,11 @@ properties:
         value: EURUSD
       - name: frequency
         value: m1
-      image: fxcmtrader.azurecr.io/trader:latest
+      image: fxcmtrader.azurecr.io/fxcmtrader/trader:1.2.0
       ports: []
       resources:
         requests:
-          cpu: 4.0
+          cpu: 2.0
           memoryInGB: 2.0
   - name: night-trader
     properties:
@@ -23,11 +23,11 @@ properties:
         value: AUDJPY
       - name: frequency
         value: m1
-      image: fxcmtrader.azurecr.io/trader:latest
+      image: fxcmtrader.azurecr.io/fxcmtrader/trader:1.2.0
       ports: []
       resources:
         requests:
-          cpu: 4.0
+          cpu: 2.0
           memoryInGB: 2.0
   osType: Linux
   imageRegistryCredentials:

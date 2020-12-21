@@ -1,5 +1,4 @@
 import threading
-import schedule
 from utils.structs import CurrencyPair, Pips
 from strategy import FractalStrategy
 from trader.orders import Order
@@ -64,8 +63,6 @@ class Trader:
         else:
             logger.critical(f'multiple positions {self.broker.open_position_ids} found, cancelling')
             self.cancel_all_positions()
-
-        return schedule.CancelJob
 
     def place_starting_oco(self):
 
