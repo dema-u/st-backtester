@@ -1,7 +1,7 @@
 from utils import LoggerHandler
 
 
-logger_helper = LoggerHandler(__name__, "INFO")
+logger_helper = LoggerHandler('POSITION', "INFO")
 logger_helper.add_stream_handler()
 logger_helper.add_path_handler()
 logger = logger_helper.logger
@@ -29,15 +29,19 @@ class FXCMPosition:
         self._open_price = self._fxcm_position.get_open()
         self._id = self._fxcm_position.get_tradeId()
         self._sl = self._fxcm_position.get_stop()
+        self._tp = self._fxcm_position.get_limit()
         self._is_long = self._fxcm_position.get_isBuy()
         self._is_back = False
         self._back_price = back_price
+        self._latest_price = self._open_price
 
         self._trader.position = self
 
         logger.info(f'{self.direction} position {self.id} initialized')
 
     def update(self, latest_price):
+
+        self._latest_price = latest_price
 
         if self.id not in self._broker.open_position_ids:
             logger.info(f'{self.direction} position {self.id} not found, removing position')
@@ -58,20 +62,32 @@ class FXCMPosition:
         self._fxcm_position.close()
 
     @property
-    def direction(self):
+    def corridor_progress(self) -> float:
+        raise NotImplementedError
+
+    @property
+    def direction(self) -> str:
         return 'long' if self.is_long else 'short'
 
     @property
-    def open_price(self):
+    def open_price(self) -> float:
         return self._open_price
 
     @property
-    def sl(self):
+    def sl(self) -> float:
         return self._sl
 
     @sl.setter
     def sl(self, new_sl):
         self._broker.change_position_sl(self.id, new_sl)
+
+    @property
+    def tp(self) -> float:
+        return self._tp
+
+    @tp.setter
+    def tp(self, new_tp):
+        raise NotImplementedError
 
     @property
     def is_long(self):

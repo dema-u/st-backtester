@@ -12,7 +12,7 @@ DEFAULT_CURRENCY = 'EURUSD'
 DEFAULT_FREQUENCY = 'm1'
 
 
-logger_helper = LoggerHandler(__name__, "INFO")
+logger_helper = LoggerHandler('MAIN', "INFO")
 logger_helper.add_stream_handler()
 logger_helper.add_path_handler()
 logger = logger_helper.logger
@@ -83,7 +83,6 @@ if __name__ == '__main__':
             sys.exit(1)
 
         finally:
-            time.sleep(0.5)
-            gc.collect()
+            time.sleep(1.0)
 
     sys.exit(0)

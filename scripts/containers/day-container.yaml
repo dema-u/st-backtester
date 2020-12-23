@@ -1,0 +1,26 @@
+apiVersion: 2019-12-01
+location: uksouth
+name: day-trader
+properties:
+  containers:
+  - name: day-trader
+    properties:
+      environmentVariables:
+      - name: currency
+        value: EURUSD
+      - name: frequency
+        value: m1
+      image: fxcmtrader.azurecr.io/fxcmtrader/trader:1.2.0
+      ports: []
+      resources:
+        requests:
+          cpu: 2.0
+          memoryInGB: 2.0
+  osType: Linux
+  imageRegistryCredentials:
+  - server: fxcmtrader.azurecr.io
+    username: fxcmtrader
+    password: YKZEdZq0AyjB/VvqfZ29ZbHXpQI7f80T
+  restartPolicy: OnFailure
+tags: null
+type: Microsoft.ContainerInstance/containerGroups

@@ -29,7 +29,7 @@ def test_night_controller():
 @patch.object(trader.schedule, 'datetime', Mock(wraps=datetime))
 def test_action_controller():
     trader.schedule.datetime.utcnow.return_value = datetime(2020, 1, 1, 7, 34, 5)
-    trader_controller = TraderController('m5', '07:00', '20:00')
+    trader_controller = TraderController('m5', '06:00', '18:00')
     time = datetime(2020, 1, 1, 7, 34, 8)
 
     for _ in range(1000000):
@@ -40,7 +40,7 @@ def test_action_controller():
         if action == 'shutdown':
             break
 
-    assert time == datetime(2020, 1, 1, 19, 57, 8)
+    assert time == datetime(2020, 1, 1, 17, 57, 8)
     assert action == 'shutdown'
 
 
