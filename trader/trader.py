@@ -1,9 +1,6 @@
-import threading
-from utils.structs import CurrencyPair, Pips
 from strategy import FractalStrategy
-from trader.orders import Order
-from trader.broker import Broker
-from utils import LoggerHandler
+from trader import Order, Broker
+from utils import LoggerHandler, CurrencyPair, Pips
 
 
 logger_helper = LoggerHandler('TRADER', "INFO")

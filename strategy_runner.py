@@ -79,7 +79,7 @@ if __name__ == '__main__':
 
         except:
             logger.exception('trader unexpectedly raised an error. shutting down.')
-            trader.terminate()
+            # trader.terminate()
             sys.exit(1)
 
         finally:
