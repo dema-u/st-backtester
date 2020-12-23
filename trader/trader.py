@@ -1,5 +1,6 @@
 from strategy import FractalStrategy
-from trader import Order, Broker
+from trader.broker import Broker
+from trader.orders import Order
 from utils import LoggerHandler, CurrencyPair, Pips
 
 

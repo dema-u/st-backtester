@@ -47,6 +47,7 @@ class StrategyRunner:
 
             elif len(self.broker.open_positions) == 1 and len(self.broker.open_orders) == 1 and position_lock:
                 upper_fractal, lower_fractal = self.corridor.get_fractals(historical_prices)
+                position.sl = position.entry_price
                 if upper_fractal is not None and lower_fractal is not None:
                     self._place_opposite_order(upper_fractal, lower_fractal)
 
@@ -163,20 +164,21 @@ def run_backtest(_year, _week, _strategy, _broker):
 
 if __name__ == '__main__':
 
-    pair = CurrencyPair('AUDUSD')
+    pair = CurrencyPair('EURUSD')
     jpy_pair: bool = pair.jpy_pair
     freq = 'm1'
     year = 2020
+    week = 4
 
-    cash = 10000.0
+    cash = 1000.0
     leverage = 30
 
     target_level = 4.0
     back_level = 2.1
     break_level = Pips(2, jpy_pair)
     sl_extension = Pips(1, jpy_pair)
-    max_width = Pips(12, jpy_pair)
-    min_width = Pips(4, jpy_pair)
+    max_width = Pips(10, jpy_pair)
+    min_width = Pips(3, jpy_pair)
     risk = 0.0050
 
     results = dict()
@@ -196,24 +198,32 @@ if __name__ == '__main__':
                                min_width=min_width,
                                risk=risk)
 
-    brokers = {week: Broker(data_handler.get_week(year, week), cash, leverage) for week in all_weeks}
+    broker = Broker(data_handler.get_week(year, week), cash, leverage)
 
-    num_cores = multiprocessing.cpu_count() - 2
-    result_list = Parallel(n_jobs=num_cores)(delayed(run_backtest)(_year=year,
-                                                                   _week=week,
-                                                                   _strategy=strategy,
-                                                                   _broker=broker) for week, broker in tqdm(brokers.items()))
+    runner = StrategyRunner(broker=broker,
+                            corridor=strategy)
 
-    results = {week: equity for week, equity, _ in result_list}
-    failed_weeks = [week for week, _, failed in result_list if failed]
+    runner.run()
+    print(runner.broker.equity)
 
-    backtest_end_time = default_timer()
-    results_df = pd.DataFrame(results.items(), columns=['Week', 'Equity']).set_index('Week')
-
-    print()
-    print('___BACKTEST RESULTS___')
-    print(f'Pair: {pair.fxcm_name}. Frequency: {freq}')
-    print(results_df)
-    print(f'Failed weeks: {failed_weeks}')
-    print(results_df.describe())
-    print(f'Backtest time taken {round(backtest_end_time - backtest_start_time, 2)}s')
+    # brokers = {week: Broker(data_handler.get_week(year, week), cash, leverage) for week in all_weeks}
+    #
+    # num_cores = multiprocessing.cpu_count() - 2
+    # result_list = Parallel(n_jobs=num_cores)(delayed(run_backtest)(_year=year,
+    #                                                                _week=week,
+    #                                                                _strategy=strategy,
+    #                                                                _broker=broker) for week, broker in tqdm(brokers.items()))
+    #
+    # results = {week: equity for week, equity, _ in result_list}
+    # failed_weeks = [week for week, _, failed in result_list if failed]
+    #
+    # backtest_end_time = default_timer()
+    # results_df = pd.DataFrame(results.items(), columns=['Week', 'Equity']).set_index('Week')
+    #
+    # print()
+    # print('___BACKTEST RESULTS___')
+    # print(f'Pair: {pair.fxcm_name}. Frequency: {freq}')
+    # print(results_df)
+    # print(f'Failed weeks: {failed_weeks}')
+    # print(results_df.describe())
+    # print(f'Backtest time taken {round(backtest_end_time - backtest_start_time, 2)}s')

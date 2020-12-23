@@ -1,5 +1,4 @@
 import time
-import gc
 import os
 import sys
 from trader import Trader, TraderController
