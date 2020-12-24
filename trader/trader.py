@@ -36,6 +36,9 @@ class Trader:
         self.position = None
         self.callback_lock = False
 
+        self._loss = False
+        self._loss_counter = 0
+
         self.cancel_all_orders()
         self.cancel_all_positions()
 
@@ -50,14 +53,17 @@ class Trader:
         if self.broker.num_positions == 0:
             logger.info('no positions detected. placing oco order')
             self.place_starting_oco()
+
         elif self.broker.num_positions == 1 and self.position is not None:
             logger.info(f'{self.position.direction} position {self.position.id} in place, reached turn price: {self.position.is_back}')
             if self.position.is_back:
                 logger.info('placing backward order. setting position stop loss to entry price')
                 self.place_backward_order()
+
         elif self.broker.num_positions == 1 and self.position is None:
             logger.warning(f'position is None but self.broker.num_positions == 1')
             self.cancel_all_positions()
+
         else:
             logger.critical(f'multiple positions {self.broker.open_position_ids} found, cancelling')
             self.cancel_all_positions()

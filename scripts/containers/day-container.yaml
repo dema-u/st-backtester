@@ -9,7 +9,7 @@ properties:
       - name: currency
         value: EURUSD
       - name: frequency
-        value: m1
+        value: m5
       image: fxcmtrader.azurecr.io/fxcmtrader/trader:1.2.0
       ports: []
       resources:

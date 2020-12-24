@@ -8,7 +8,7 @@ from utils import ConfigHandler, LoggerHandler
 
 
 DEFAULT_CURRENCY = 'EURUSD'
-DEFAULT_FREQUENCY = 'm1'
+DEFAULT_FREQUENCY = 'm5'
 
 
 logger_helper = LoggerHandler('MAIN', "INFO")
