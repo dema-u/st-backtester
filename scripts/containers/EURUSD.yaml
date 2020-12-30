@@ -1,9 +1,9 @@
 apiVersion: 2019-12-01
 location: uksouth
-name: day-trader
+name: EURUSD
 properties:
   containers:
-  - name: day-trader
+  - name: trader
     properties:
       environmentVariables:
       - name: currency

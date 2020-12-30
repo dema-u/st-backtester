@@ -1,15 +1,15 @@
 apiVersion: 2019-12-01
 location: uksouth
-name: night-trader
+name: GBPUSD
 properties:
   containers:
-  - name: night-trader
+  - name: trader
     properties:
       environmentVariables:
       - name: currency
-        value: USDJPY
+        value: GBPUSD
       - name: frequency
-        value: m1
+        value: m5
       image: fxcmtrader.azurecr.io/fxcmtrader/trader:1.2.0
       ports: []
       resources:

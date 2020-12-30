@@ -115,14 +115,6 @@ class Broker:
     def change_position_sl(self, id, new_sl):
         self._connection.change_trade_stop_limit(id, is_stop=True, rate=new_sl, is_in_pips=False)
 
-    def cancel_all_positions(self):
-        self._connection.close_all_for_symbol(self._pair.fxcm_name)
-
-    def cancel_all_orders(self):
-        for order_id in self._connection.get_order_ids():
-            order = self._connection.get_order(order_id)
-            order.delete()
-
     @property
     def latest_price(self):
         last_price = self._connection.get_last_price(self._pair.fxcm_name)
@@ -145,13 +137,34 @@ class Broker:
 
         return historical_data[:closest]
 
+    def cancel_all_positions(self):
+        self._connection.close_all_for_symbol(self._pair.fxcm_name)
+
+    def cancel_all_orders(self):
+        for order_id in self._connection.get_order_ids():
+            order = self._connection.get_order(order_id)
+            if order.get_currency() == self._pair.fxcm_name:
+                order.delete()
+
     @property
     def open_position_ids(self):
-        return self._connection.get_open_trade_ids()
+        open_positions = self._connection.get_open_positions()
+
+        if len(open_positions) == 0:
+            return []
+        else:
+            open_positions_filtered = open_positions[open_positions['currency'] == self._pair.fxcm_name]
+            return open_positions_filtered['tradeId'].astype(int).tolist()
 
     @property
     def open_order_ids(self):
-        return self._connection.get_order_ids()
+        open_orders = self._connection.get_orders()
+
+        if len(open_orders) == 0:
+            return []
+        else:
+            open_orders_filtered = open_orders[open_orders['currency'] == self._pair.fxcm_name]
+            return open_orders_filtered['orderId'].astype(int).tolist()
 
     @property
     def num_positions(self):
@@ -168,10 +181,6 @@ class Broker:
     @property
     def available_equity(self):
         return self._connection.get_accounts_summary()['equity'][0]
-
-    @property
-    def orders(self):
-        return [self._connection.get_orders(id) for id in self._connection.get_order_ids()]
 
     def close_connection(self):
         self._connection.unsubscribe_market_data(self._pair.fxcm_name)

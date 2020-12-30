@@ -8,7 +8,7 @@ from utils import ConfigHandler, LoggerHandler
 
 
 DEFAULT_CURRENCY = 'EURUSD'
-DEFAULT_FREQUENCY = 'm5'
+DEFAULT_FREQUENCY = 'm1'
 
 
 logger_helper = LoggerHandler('MAIN', "INFO")
@@ -78,7 +78,6 @@ if __name__ == '__main__':
 
         except:
             logger.exception('trader unexpectedly raised an error. shutting down.')
-            # trader.terminate()
             sys.exit(1)
 
         finally:
