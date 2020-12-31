@@ -94,3 +94,19 @@ def test_outside_time_night_controller():
     trader_controller = TraderController('m5', '07:00', '20:00')
 
     assert trader_controller.get_action() == 'shutdown'
+
+
+@patch.object(trader.controller, 'datetime', Mock(wraps=datetime))
+def test_midnight_nostart_controller():
+    trader.controller.datetime.utcnow.return_value = datetime(2020, 1, 1, 21, 34, 5)
+    trader_controller = TraderController('m5', '00:00', '20:00')
+
+    assert trader_controller.get_action() == 'shutdown'
+
+
+@patch.object(trader.controller, 'datetime', Mock(wraps=datetime))
+def test_midnight_start_controller():
+    trader.controller.datetime.utcnow.return_value = datetime(2020, 1, 1, 0, 2, 5)
+    trader_controller = TraderController('m5', '00:00', '20:00')
+
+    print(trader_controller._events)

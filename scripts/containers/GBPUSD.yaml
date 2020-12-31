@@ -10,7 +10,7 @@ properties:
         value: GBPUSD
       - name: frequency
         value: m5
-      image: fxcmtrader.azurecr.io/fxcmtrader/trader:1.2.0
+      image: fxcmtrader.azurecr.io/fxcmtrader/trader:1.2.1
       ports: []
       resources:
         requests:

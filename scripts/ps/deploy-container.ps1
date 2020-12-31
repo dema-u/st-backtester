@@ -1,4 +1,4 @@
-$Currency = Read-Host -Prompt 'Input Currency'
+$Currency = Read-Host -Prompt 'Currency To Trade'
 $FileName = -join($Currency, '.yaml')
 $ContainerPath = Join-Path ../containers/ $FileName
 
